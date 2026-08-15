@@ -17,17 +17,12 @@ let hipsterTimer = null;
 let hipsterGameId = 0;
 
 
-// =====================================================
-// HELPER
-// =====================================================
-
-function hipsterElement(id) {
-    return document.getElementById(id);
-}
+const hipsterEl =
+    id => document.getElementById(id);
 
 
 // =====================================================
-// INICIAR PARTIDA
+// INICIO
 // =====================================================
 
 async function startHipster({
@@ -35,14 +30,8 @@ async function startHipster({
     playlist = null
 } = {}) {
 
-    /*
-     * Mata completamente la partida anterior.
-     */
     stopHipster();
 
-    /*
-     * Nuevo identificador de partida.
-     */
     const gameId =
         ++hipsterGameId;
 
@@ -57,10 +46,10 @@ async function startHipster({
     hipsterCurrentTrack = null;
 
     const score =
-        hipsterElement("hipsterScore");
+        hipsterEl("hipsterScore");
 
     const best =
-        hipsterElement("hipsterBest");
+        hipsterEl("hipsterBest");
 
     if (score) {
         score.textContent = "0";
@@ -71,13 +60,13 @@ async function startHipster({
             hipsterBest;
     }
 
-    hipsterElement("hipsterIntro")
+    hipsterEl("hipsterIntro")
         ?.classList.add("hidden");
 
-    hipsterElement("hipsterGameOver")
+    hipsterEl("hipsterGameOver")
         ?.classList.add("hidden");
 
-    hipsterElement("hipsterBoard")
+    hipsterEl("hipsterBoard")
         ?.classList.remove("hidden");
 
     resetPlayer();
@@ -87,47 +76,32 @@ async function startHipster({
         hipsterTracks =
             await loadHipsterTracks();
 
-        /*
-         * Normalizamos años.
-         * No existe ningún límite artificial de longitud.
-         */
-        hipsterTracks = hipsterTracks
-            .filter(track =>
-                track &&
-                track.uri &&
-                track.name &&
-                Number.isInteger(
-                    Number(track.year)
-                ) &&
-                Number(track.year) > 0
-            )
-            .map(track => ({
-                ...track,
-                year: Number(track.year)
-            }));
-
+        hipsterTracks =
+            hipsterTracks
+                .filter(track =>
+                    track?.uri &&
+                    track?.name &&
+                    Number.isInteger(
+                        Number(track.year)
+                    ) &&
+                    Number(track.year) > 0
+                )
+                .map(track => ({
+                    ...track,
+                    year: Number(track.year)
+                }));
 
         if (gameId !== hipsterGameId) {
             return;
         }
 
-
         if (hipsterTracks.length < 2) {
-
             throw new Error(
                 "Esta playlist necesita al menos 2 canciones con año para jugar a Hipster."
             );
         }
 
-
-        shuffle(
-            hipsterTracks
-        );
-
-
-        /*
-         * Primera carta conocida.
-         */
+        shuffle(hipsterTracks);
 
         hipsterTimeline = [
             hipsterTracks.shift()
@@ -135,14 +109,7 @@ async function startHipster({
 
         renderTimeline();
 
-
-        /*
-         * Segunda canción.
-         */
-
-        await nextHipsterTrack(
-            gameId
-        );
+        await nextHipsterTrack(gameId);
 
     } catch (error) {
 
@@ -151,7 +118,7 @@ async function startHipster({
         }
 
         console.error(
-            "❌ Hipster:",
+            "Hipster:",
             error
         );
 
@@ -160,9 +127,7 @@ async function startHipster({
             "No se pudo iniciar Hipster."
         );
 
-        showScreen(
-            "menuScreen"
-        );
+        showScreen("menuScreen");
     }
 }
 
@@ -173,10 +138,6 @@ async function startHipster({
 
 async function loadHipsterTracks() {
 
-    /*
-     * HIPSTER PERSONAL
-     */
-
     if (hipsterMode === "user") {
 
         if (!hipsterPlaylist) {
@@ -185,24 +146,39 @@ async function loadHipsterTracks() {
             );
         }
 
-        if (
-            typeof getPlaylistTracks !==
-            "function"
-        ) {
+        const response =
+            await fetch(
+                `/api/playlists/${encodeURIComponent(
+                    hipsterPlaylist.id
+                )}/hipster`
+            );
+
+        if (!response.ok) {
+            const error =
+                await response.text();
+
+            console.error(
+                "Hipster personal:",
+                error
+            );
+
             throw new Error(
-                "getPlaylistTracks no está disponible."
+                "No se pudo cargar la playlist para Hipster."
             );
         }
 
-        return getPlaylistTracks(
-            hipsterPlaylist.id
-        );
+        const data =
+            await response.json();
+
+        if (!Array.isArray(data)) {
+            throw new Error(
+                "La playlist devolvió una respuesta inválida."
+            );
+        }
+
+        return data;
     }
 
-
-    /*
-     * HIPSTER GLOBAL
-     */
 
     const response =
         await fetch(
@@ -210,7 +186,6 @@ async function loadHipsterTracks() {
         );
 
     if (!response.ok) {
-
         throw new Error(
             `Error cargando Hipster Global: ${response.status}`
         );
@@ -220,7 +195,6 @@ async function loadHipsterTracks() {
         await response.json();
 
     if (!Array.isArray(data)) {
-
         throw new Error(
             "La playlist oficial devolvió una respuesta inválida."
         );
@@ -234,7 +208,9 @@ async function loadHipsterTracks() {
 // SIGUIENTE CANCIÓN
 // =====================================================
 
-async function nextHipsterTrack(gameId) {
+async function nextHipsterTrack(
+    gameId
+) {
 
     if (
         gameId !== undefined &&
@@ -257,7 +233,6 @@ async function nextHipsterTrack(gameId) {
     resetPlayer();
     setPlayerStatus("CARGANDO");
 
-
     try {
 
         await playSpotifyTrack(
@@ -278,46 +253,37 @@ async function nextHipsterTrack(gameId) {
     } catch (error) {
 
         console.warn(
-            "⚠️ No se pudo iniciar automáticamente:",
+            "No se pudo iniciar automáticamente:",
             error
         );
 
         setPlayerStatus(
-            "PULSA ▶"
+            "PULSA PLAY"
         );
     }
 }
 
 
 // =====================================================
-// PLAY / PAUSA
+// PLAYER
 // =====================================================
 
 async function toggleHipsterPlay() {
 
     try {
-
         await spotifyTogglePlay();
-
     } catch (error) {
-
         console.error(
-            "❌ Player Hipster:",
+            "Player Hipster:",
             error
         );
     }
 }
 
 
-// =====================================================
-// SEEK
-// =====================================================
-
 async function seekHipster(event) {
 
-    if (
-        !hipsterPlayerState?.duration
-    ) {
+    if (!hipsterPlayerState?.duration) {
         return;
     }
 
@@ -327,24 +293,15 @@ async function seekHipster(event) {
         1000;
 
     try {
-
-        await spotifySeek(
-            position
-        );
-
+        await spotifySeek(position);
     } catch (error) {
-
         console.error(
-            "❌ Seek Hipster:",
+            "Seek Hipster:",
             error
         );
     }
 }
 
-
-// =====================================================
-// ESTADO SPOTIFY
-// =====================================================
 
 window.onSpotifyGameStateChanged =
     state => {
@@ -353,11 +310,10 @@ window.onSpotifyGameStateChanged =
             return;
         }
 
-        hipsterPlayerState =
-            state;
+        hipsterPlayerState = state;
 
         const progress =
-            hipsterElement(
+            hipsterEl(
                 "hipsterProgress"
             );
 
@@ -375,12 +331,12 @@ window.onSpotifyGameStateChanged =
         }
 
         const current =
-            hipsterElement(
+            hipsterEl(
                 "hipsterCurrentTime"
             );
 
         const duration =
-            hipsterElement(
+            hipsterEl(
                 "hipsterDuration"
             );
 
@@ -399,7 +355,7 @@ window.onSpotifyGameStateChanged =
         }
 
         const button =
-            hipsterElement(
+            hipsterEl(
                 "hipsterPlayPause"
             );
 
@@ -425,7 +381,7 @@ window.onSpotifyGameStateChanged =
 function renderTimeline() {
 
     const timeline =
-        hipsterElement(
+        hipsterEl(
             "hipsterTimeline"
         );
 
@@ -434,7 +390,6 @@ function renderTimeline() {
     }
 
     timeline.innerHTML = "";
-
 
     for (
         let position = 0;
@@ -450,7 +405,6 @@ function renderTimeline() {
         slot.className =
             "hipsterSlot";
 
-
         const button =
             document.createElement(
                 "button"
@@ -459,9 +413,7 @@ function renderTimeline() {
         button.type = "button";
         button.className =
             "hipsterPlus";
-
-        button.textContent =
-            "+";
+        button.textContent = "+";
 
         button.title =
             position === 0
@@ -470,17 +422,13 @@ function renderTimeline() {
                     ? "Colocar al final"
                     : "Colocar aquí";
 
-
         button.onclick =
             () => choosePosition(
                 position
             );
 
-
         slot.appendChild(button);
-
         timeline.appendChild(slot);
-
 
         if (
             position <
@@ -511,7 +459,6 @@ function createCard(track) {
     card.className =
         "hipsterCard";
 
-
     const image =
         document.createElement(
             "img"
@@ -519,12 +466,9 @@ function createCard(track) {
 
     image.className =
         "hipsterCardCover";
-
     image.src =
         track.cover || "";
-
     image.alt = "";
-
 
     const artist =
         document.createElement(
@@ -533,10 +477,8 @@ function createCard(track) {
 
     artist.className =
         "hipsterCardArtist";
-
     artist.textContent =
         track.artist || "";
-
 
     const year =
         document.createElement(
@@ -545,10 +487,8 @@ function createCard(track) {
 
     year.className =
         "hipsterCardYear";
-
     year.textContent =
         track.year;
-
 
     const song =
         document.createElement(
@@ -557,10 +497,8 @@ function createCard(track) {
 
     song.className =
         "hipsterCardSong";
-
     song.textContent =
         track.name;
-
 
     card.append(
         image,
@@ -601,11 +539,9 @@ function choosePosition(position) {
     const year =
         hipsterCurrentTrack.year;
 
-
     const correct =
         (!before || year >= before.year) &&
         (!after || year <= after.year);
-
 
     hipsterTimeline.splice(
         position,
@@ -615,30 +551,18 @@ function choosePosition(position) {
 
     renderTimeline();
 
-
     const cards =
         document.querySelectorAll(
             ".hipsterCard"
         );
 
-    const selectedCard =
-        cards[position];
-
-
-    if (selectedCard) {
-
-        selectedCard.classList.add(
-            correct
-                ? "correct"
-                : "wrong"
-        );
-    }
-
-
-    showResult(
+    cards[position]?.classList.add(
         correct
+            ? "correct"
+            : "wrong"
     );
 
+    showResult(correct);
 
     setPlayerStatus(
         correct
@@ -646,41 +570,25 @@ function choosePosition(position) {
             : "FALLO"
     );
 
-
-    /*
-     * ERROR → fin de partida.
-     */
+    clearTimeout(
+        hipsterTimer
+    );
 
     if (!correct) {
 
-        clearTimeout(
-            hipsterTimer
-        );
-
         hipsterTimer =
             setTimeout(
-                () => {
-
-                    endHipster(
-                        false
-                    );
-
-                },
+                () => endHipster(false),
                 900
             );
 
         return;
     }
 
-
-    /*
-     * ACIERTO.
-     */
-
     hipsterScore++;
 
     const score =
-        hipsterElement(
+        hipsterEl(
             "hipsterScore"
         );
 
@@ -689,30 +597,21 @@ function choosePosition(position) {
             hipsterScore;
     }
 
-
     const gameId =
         hipsterGameId;
-
-
-    clearTimeout(
-        hipsterTimer
-    );
-
 
     hipsterTimer =
         setTimeout(
             () => {
 
                 if (
-                    gameId !==
+                    gameId ===
                     hipsterGameId
                 ) {
-                    return;
+                    nextHipsterTrack(
+                        gameId
+                    );
                 }
-
-                nextHipsterTrack(
-                    gameId
-                );
 
             },
             850
@@ -727,7 +626,7 @@ function choosePosition(position) {
 function showResult(correct) {
 
     const result =
-        hipsterElement(
+        hipsterEl(
             "hipsterResult"
         );
 
@@ -739,21 +638,17 @@ function showResult(correct) {
         "hidden"
     );
 
-
     result.innerHTML =
         correct
-
             ? `
-                <strong>✓ ¡Correcto!</strong>
+                <strong>Correcto</strong>
                 ${escapeHtml(
                     hipsterCurrentTrack.name
                 )}
                 · ${hipsterCurrentTrack.year}
             `
-
             : `
-                <strong>✕ Incorrecto</strong>
-                Era
+                <strong>Incorrecto</strong>
                 ${escapeHtml(
                     hipsterCurrentTrack.name
                 )}
@@ -764,7 +659,7 @@ function showResult(correct) {
 
 function hideResult() {
 
-    hipsterElement(
+    hipsterEl(
         "hipsterResult"
     )?.classList.add(
         "hidden"
@@ -773,49 +668,45 @@ function hideResult() {
 
 
 // =====================================================
-// PLAYER
+// PLAYER UI
 // =====================================================
 
 function resetPlayer() {
 
     const progress =
-        hipsterElement(
+        hipsterEl(
             "hipsterProgress"
         );
 
     const current =
-        hipsterElement(
+        hipsterEl(
             "hipsterCurrentTime"
         );
 
     const duration =
-        hipsterElement(
+        hipsterEl(
             "hipsterDuration"
         );
 
     const button =
-        hipsterElement(
+        hipsterEl(
             "hipsterPlayPause"
         );
-
 
     if (progress) {
         progress.value = 0;
     }
 
     if (current) {
-        current.textContent =
-            "0:00";
+        current.textContent = "0:00";
     }
 
     if (duration) {
-        duration.textContent =
-            "0:00";
+        duration.textContent = "0:00";
     }
 
     if (button) {
-        button.textContent =
-            "▶";
+        button.textContent = "▶";
     }
 }
 
@@ -823,7 +714,7 @@ function resetPlayer() {
 function setPlayerStatus(text) {
 
     const status =
-        hipsterElement(
+        hipsterEl(
             "hipsterPlayerStatus"
         );
 
@@ -835,7 +726,7 @@ function setPlayerStatus(text) {
 
 
 // =====================================================
-// GAME OVER
+// FIN
 // =====================================================
 
 function endHipster(completed = false) {
@@ -844,51 +735,39 @@ function endHipster(completed = false) {
         hipsterTimer
     );
 
-    /*
-     * Invalidamos cualquier callback pendiente.
-     */
     ++hipsterGameId;
-
     hipsterLocked = true;
 
-
-    /*
-     * PAUSAR SPOTIFY.
-     */
     if (
         typeof spotifyPause ===
         "function"
     ) {
-
-        spotifyPause()
-            .catch(() => {});
+        spotifyPause().catch(
+            () => {}
+        );
     }
 
     if (
         typeof pauseSpotify ===
         "function"
     ) {
-
         pauseSpotify();
     }
 
-
-    hipsterElement(
+    hipsterEl(
         "hipsterBoard"
     )?.classList.add(
         "hidden"
     );
 
-
-    hipsterElement(
+    hipsterEl(
         "hipsterGameOver"
     )?.classList.remove(
         "hidden"
     );
 
-
     const finalScore =
-        hipsterElement(
+        hipsterEl(
             "hipsterFinalScore"
         );
 
@@ -897,6 +776,10 @@ function endHipster(completed = false) {
             hipsterScore;
     }
 
+    const record =
+        hipsterEl(
+            "hipsterFinalRecord"
+        );
 
     if (
         hipsterScore >
@@ -911,31 +794,26 @@ function endHipster(completed = false) {
             String(hipsterBest)
         );
 
-        hipsterElement(
-            "hipsterFinalRecord"
-        ).textContent =
-            "🏆 Nuevo récord";
+        record.textContent =
+            "Nuevo récord";
 
     } else {
 
-        hipsterElement(
-            "hipsterFinalRecord"
-        ).textContent =
+        record.textContent =
             `Récord: ${hipsterBest}`;
     }
 
-
-    hipsterElement(
+    hipsterEl(
         "hipsterFinalTitle"
     ).textContent =
         completed
-            ? "¡Has completado Hipster!"
+            ? "Has completado Hipster"
             : "Te has equivocado";
 }
 
 
 // =====================================================
-// DETENER PARTIDA ANTERIOR
+// DETENER
 // =====================================================
 
 function stopHipster() {
@@ -956,16 +834,15 @@ function stopHipster() {
         typeof spotifyPause ===
         "function"
     ) {
-
-        spotifyPause()
-            .catch(() => {});
+        spotifyPause().catch(
+            () => {}
+        );
     }
 
     if (
         typeof pauseSpotify ===
         "function"
     ) {
-
         pauseSpotify();
     }
 }
@@ -983,38 +860,21 @@ function formatTime(ms) {
         );
 
     return `${Math.floor(seconds / 60)}:${
-        String(seconds % 60).padStart(
-            2,
-            "0"
-        )}`;
+        String(
+            seconds % 60
+        ).padStart(2, "0")
+    }`;
 }
 
 
 function escapeHtml(value) {
 
-    return String(
-        value ?? ""
-    )
-        .replace(
-            /&/g,
-            "&amp;"
-        )
-        .replace(
-            /</g,
-            "&lt;"
-        )
-        .replace(
-            />/g,
-            "&gt;"
-        )
-        .replace(
-            /"/g,
-            "&quot;"
-        )
-        .replace(
-            /'/g,
-            "&#039;"
-        );
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
 }
 
 
@@ -1058,38 +918,29 @@ document.addEventListener(
                 "#hipsterPlayPause"
             )
         ) {
-
             toggleHipsterPlay();
             return;
         }
-
 
         if (
             event.target.closest(
                 "#hipsterRestartButton"
             )
         ) {
-
             startHipster({
                 mode: hipsterMode,
                 playlist: hipsterPlaylist
             });
-
             return;
         }
-
 
         if (
             event.target.closest(
                 "#hipsterExitButton"
             )
         ) {
-
             stopHipster();
-
-            showScreen(
-                "menuScreen"
-            );
+            showScreen("menuScreen");
         }
     }
 );
@@ -1103,10 +954,7 @@ document.addEventListener(
             event.target.id ===
             "hipsterProgress"
         ) {
-
-            seekHipster(
-                event
-            );
+            seekHipster(event);
         }
     }
 );

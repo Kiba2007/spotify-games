@@ -1,32 +1,28 @@
-// =====================================================
-// BINGO MUSICAL
-// =====================================================
-
 let bingoTracks = [];
 let bingoPlaylistName = "";
 
 
 // =====================================================
-// INICIAR BINGO
+// INICIO
 // =====================================================
 
 function startBingo(tracks, playlistName) {
-
-    console.log("🎱 Iniciando Bingo...");
-    console.log("🎵 Canciones recibidas:", tracks.length);
 
     bingoTracks = Array.isArray(tracks)
         ? tracks
         : [];
 
-    bingoPlaylistName = playlistName || "Bingo Musical";
+    bingoPlaylistName =
+        playlistName || "Bingo Musical";
 
-    const title = document.getElementById(
-        "bingoPlaylistName"
-    );
+    const title =
+        document.getElementById(
+            "bingoPlaylistName"
+        );
 
     if (title) {
-        title.textContent = bingoPlaylistName;
+        title.textContent =
+            bingoPlaylistName;
     }
 
     renderBingoSetup();
@@ -40,19 +36,18 @@ function startBingo(tracks, playlistName) {
 function renderBingoSetup() {
 
     const content =
-        document.getElementById("bingoContent");
-
-    if (!content) {
-
-        console.error(
-            "❌ No existe #bingoContent"
+        document.getElementById(
+            "bingoContent"
         );
 
+    if (!content) {
+        console.error(
+            "No existe #bingoContent"
+        );
         return;
     }
 
     content.innerHTML = `
-
         <section class="bingoSetup">
 
             <div class="bingoSetupInfo">
@@ -66,12 +61,11 @@ function renderBingoSetup() {
                 </h2>
 
                 <p>
-                    Genera tus cartones musicales
-                    a partir de las canciones de tu playlist.
+                    Genera tus cartones a partir
+                    de las canciones de tu playlist.
                 </p>
 
             </div>
-
 
             <div class="bingoControls">
 
@@ -85,11 +79,12 @@ function renderBingoSetup() {
                         id="bingoName"
                         type="text"
                         placeholder="Ej. Bingo de verano"
-                        value="${escapeHtml(bingoPlaylistName)}"
+                        value="${escapeHtml(
+                            bingoPlaylistName
+                        )}"
                     >
 
                 </div>
-
 
                 <div class="bingoControl">
 
@@ -98,12 +93,12 @@ function renderBingoSetup() {
                     </label>
 
                     <select id="bingoCardCount">
-
                         ${Array.from(
                             { length: 20 },
-                            (_, i) => {
+                            (_, index) => {
 
-                                const number = i + 1;
+                                const number =
+                                    index + 1;
 
                                 return `
                                     <option value="${number}">
@@ -115,11 +110,9 @@ function renderBingoSetup() {
                                 `;
                             }
                         ).join("")}
-
                     </select>
 
                 </div>
-
 
                 <button
                     id="generateBingoButton"
@@ -133,100 +126,50 @@ function renderBingoSetup() {
 
         </section>
 
-
-        <section
-            id="bingoCards"
-            class="bingoCardsSection"
-        ></section>
-
+        <section id="bingoCards"></section>
     `;
 
-
-    const button =
-        document.getElementById(
+    document
+        .getElementById(
             "generateBingoButton"
+        )
+        ?.addEventListener(
+            "click",
+            generateBingoCards
         );
-
-
-    if (!button) {
-
-        console.error(
-            "❌ No existe #generateBingoButton"
-        );
-
-        return;
-    }
-
-
-    button.addEventListener(
-        "click",
-        generateBingoCards
-    );
-
-
-    console.log(
-        "✅ Configuración del Bingo cargada"
-    );
 }
 
 
 // =====================================================
-// GENERAR CARTONES
+// GENERAR
 // =====================================================
 
 function generateBingoCards() {
 
-    console.log("🎱 Generando cartones...");
-
-    const countElement =
-        document.getElementById(
-            "bingoCardCount"
-        );
-
-    const nameElement =
-        document.getElementById(
-            "bingoName"
-        );
-
-
-    if (!countElement) {
-
-        console.error(
-            "❌ No existe #bingoCardCount"
-        );
-
-        return;
-    }
-
-
     const count =
         parseInt(
-            countElement.value,
+            document.getElementById(
+                "bingoCardCount"
+            )?.value,
             10
         );
 
-
-    const bingoName =
-        nameElement?.value.trim() ||
+    const name =
+        document
+            .getElementById("bingoName")
+            ?.value
+            .trim() ||
         bingoPlaylistName ||
         "Bingo Musical";
-
 
     const container =
         document.getElementById(
             "bingoCards"
         );
 
-
     if (!container) {
-
-        console.error(
-            "❌ No existe #bingoCards"
-        );
-
         return;
     }
-
 
     if (!bingoTracks.length) {
 
@@ -237,17 +180,14 @@ function generateBingoCards() {
         return;
     }
 
-
-    // Guardamos el nombre
-    bingoPlaylistName = bingoName;
-
-
+    bingoPlaylistName = name;
     container.innerHTML = "";
 
+    const grid =
+        document.createElement("div");
 
-    // =================================================
-    // GENERAR CARTONES
-    // =================================================
+    grid.className =
+        "bingoCardsGrid";
 
     for (
         let i = 1;
@@ -256,67 +196,48 @@ function generateBingoCards() {
     ) {
 
         /*
-         * Cada cartón utiliza 15 canciones.
-         *
-         * Se mezclan todas las canciones disponibles
-         * antes de seleccionar las 15.
+         * Cada cartón necesita 15 canciones.
          */
-
         const cardTracks =
             shuffle(
                 [...bingoTracks]
-            ).slice(
-                0,
-                15
-            );
+            ).slice(0, 15);
 
-
-        const card =
+        grid.appendChild(
             createBingoCard(
                 cardTracks,
                 i,
-                bingoName
-            );
-
-
-        container.appendChild(card);
+                name
+            )
+        );
     }
 
+    container.appendChild(grid);
 
-    // =================================================
-    // ACCIONES
-    // =================================================
 
     const actions =
-        document.createElement(
-            "div"
-        );
+        document.createElement("div");
 
     actions.className =
         "bingoActions";
 
-
     actions.innerHTML = `
-
         <button
             id="regenerateBingoButton"
             class="secondaryButton"
             type="button"
         >
-            🔄 Regenerar
+            Regenerar
         </button>
-
 
         <button
             id="printBingoButton"
             class="primaryButton"
             type="button"
         >
-            🖨 Imprimir / Guardar PDF
+            Imprimir / Guardar PDF
         </button>
-
     `;
-
 
     container.appendChild(
         actions
@@ -332,39 +253,25 @@ function generateBingoCards() {
             generateBingoCards
         );
 
-
     document
         .getElementById(
             "printBingoButton"
         )
         ?.addEventListener(
             "click",
-            () => {
-
-                window.print();
-
-            }
+            () => window.print()
         );
 
-
-    // =================================================
-    // SCROLL HACIA LOS CARTONES
-    // =================================================
 
     container.scrollIntoView({
         behavior: "smooth",
         block: "start"
     });
-
-
-    console.log(
-        `✅ ${count} cartones generados`
-    );
 }
 
 
 // =====================================================
-// CREAR CARTÓN
+// CARTÓN
 // =====================================================
 
 function createBingoCard(
@@ -378,56 +285,39 @@ function createBingoCard(
             "article"
         );
 
-
     card.className =
         "bingoCard";
 
-
-    // =================================================
-    // CABECERA
-    // =================================================
 
     const header =
         document.createElement(
             "div"
         );
 
-
     header.className =
         "bingoCardHeader";
 
-
     header.innerHTML = `
-
         <div>
-
-            <span class="bingoCardEyebrow">
+            <span>
                 BINGO MUSICAL
             </span>
 
             <h3>
                 ${escapeHtml(bingoName)}
             </h3>
-
         </div>
-
 
         <strong>
             ${String(number).padStart(2, "0")}
         </strong>
-
     `;
 
-
-    // =================================================
-    // GRID
-    // =================================================
 
     const grid =
         document.createElement(
             "div"
         );
-
 
     grid.className =
         "bingoGrid";
@@ -436,38 +326,26 @@ function createBingoCard(
     const rows =
         createBingoRows();
 
-
     let trackIndex = 0;
 
 
-    for (
-        let row = 0;
-        row < 3;
-        row++
-    ) {
+    for (let row = 0; row < 3; row++) {
 
-        for (
-            let col = 0;
-            col < 9;
-            col++
-        ) {
+        for (let col = 0; col < 9; col++) {
 
             const cell =
                 document.createElement(
                     "div"
                 );
 
-
             cell.className =
                 "bingoCell";
 
 
-            // Celda con canción
             if (rows[row][col]) {
 
                 const track =
                     tracks[trackIndex++];
-
 
                 if (track) {
 
@@ -475,19 +353,15 @@ function createBingoCard(
                         "filled"
                     );
 
-
                     const image =
                         document.createElement(
                             "img"
                         );
 
-
                     image.src =
                         track.cover || "";
 
-
-                    image.alt =
-                        "";
+                    image.alt = "";
 
 
                     const name =
@@ -495,21 +369,15 @@ function createBingoCard(
                             "div"
                         );
 
-
                     name.className =
                         "bingoTrackName";
-
 
                     name.textContent =
                         track.name;
 
 
-                    cell.appendChild(
-                        image
-                    );
-
-
-                    cell.appendChild(
+                    cell.append(
+                        image,
                         name
                     );
                 }
@@ -519,33 +387,23 @@ function createBingoCard(
                 cell.classList.add(
                     "empty"
                 );
-
             }
 
 
-            grid.appendChild(
-                cell
-            );
+            grid.appendChild(cell);
         }
     }
 
-
-    // =================================================
-    // PIE
-    // =================================================
 
     const footer =
         document.createElement(
             "footer"
         );
 
-
     footer.className =
         "bingoCardFooter";
 
-
     footer.innerHTML = `
-
         <span>
             ${escapeHtml(bingoName)}
         </span>
@@ -553,7 +411,6 @@ function createBingoCard(
         <span>
             Cartón ${String(number).padStart(2, "0")}
         </span>
-
     `;
 
 
@@ -563,59 +420,41 @@ function createBingoCard(
         footer
     );
 
-
     return card;
 }
 
 
 // =====================================================
-// DISTRIBUCIÓN DE LAS 15 CANCIONES
+// DISTRIBUCIÓN
 // =====================================================
 
 function createBingoRows() {
 
-    const rows = [];
+    return Array.from(
+        { length: 3 },
+        () => {
 
+            const filled =
+                Array(9).fill(false);
 
-    for (
-        let row = 0;
-        row < 3;
-        row++
-    ) {
-
-        const positions =
             shuffle(
                 [...Array(9).keys()]
-            ).slice(
-                0,
-                5
-            );
+            )
+                .slice(0, 5)
+                .forEach(
+                    position => {
+                        filled[position] = true;
+                    }
+                );
 
-
-        const filled =
-            new Array(9)
-                .fill(false);
-
-
-        positions.forEach(
-            position => {
-                filled[position] = true;
-            }
-        );
-
-
-        rows.push(
-            filled
-        );
-    }
-
-
-    return rows;
+            return filled;
+        }
+    );
 }
 
 
 // =====================================================
-// SHUFFLE
+// UTILIDADES
 // =====================================================
 
 function shuffle(array) {
@@ -632,7 +471,6 @@ function shuffle(array) {
                 (i + 1)
             );
 
-
         [
             array[i],
             array[j]
@@ -642,43 +480,16 @@ function shuffle(array) {
         ];
     }
 
-
     return array;
 }
 
 
-// =====================================================
-// ESCAPAR HTML
-// =====================================================
-
 function escapeHtml(value) {
 
-    return String(
-        value ?? ""
-    )
-
-        .replace(
-            /&/g,
-            "&amp;"
-        )
-
-        .replace(
-            /</g,
-            "&lt;"
-        )
-
-        .replace(
-            />/g,
-            "&gt;"
-        )
-
-        .replace(
-            /"/g,
-            "&quot;"
-        )
-
-        .replace(
-            /'/g,
-            "&#039;"
-        );
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
 }

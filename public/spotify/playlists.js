@@ -7,10 +7,15 @@ let selectedPlaylist = null;
 // =====================================================
 
 async function loadPlaylists() {
-    const container =
-        document.getElementById("playlistList");
 
-    if (!container) return;
+    const container =
+        document.getElementById(
+            "playlistList"
+        );
+
+    if (!container) {
+        return;
+    }
 
     container.innerHTML = `
         <div class="playlistLoading">
@@ -19,8 +24,11 @@ async function loadPlaylists() {
     `;
 
     try {
+
         const response =
-            await fetch("/api/playlists");
+            await fetch(
+                "/api/playlists"
+            );
 
         if (!response.ok) {
             throw new Error(
@@ -40,6 +48,7 @@ async function loadPlaylists() {
         playlists = data;
 
         if (!playlists.length) {
+
             container.innerHTML = `
                 <div class="playlistEmpty">
                     No tienes playlists disponibles.
@@ -54,7 +63,11 @@ async function loadPlaylists() {
         updateStartButton?.();
 
     } catch (error) {
-        console.error("❌ Playlists:", error);
+
+        console.error(
+            "Playlists:",
+            error
+        );
 
         container.innerHTML = `
             <div class="playlistEmpty">
@@ -65,88 +78,115 @@ async function loadPlaylists() {
 }
 
 
+// =====================================================
+// RENDER
+// =====================================================
+
 function renderPlaylists() {
+
     const container =
-        document.getElementById("playlistList");
+        document.getElementById(
+            "playlistList"
+        );
 
-    if (!container) return;
-
-    container.innerHTML = "";
+    if (!container) {
+        return;
+    }
 
     const fragment =
         document.createDocumentFragment();
 
-    playlists.forEach(playlist => {
+    container.innerHTML = "";
 
-        const card =
-            document.createElement("button");
+    playlists.forEach(
+        playlist => {
 
-        card.type = "button";
-        card.className = "playlist";
-        card.dataset.id = playlist.id;
+            const card =
+                document.createElement(
+                    "button"
+                );
 
-        const image =
-            document.createElement("img");
+            card.type = "button";
+            card.className = "playlist";
+            card.dataset.id =
+                playlist.id;
 
-        image.src =
-            playlist.image || "";
+            const image =
+                document.createElement(
+                    "img"
+                );
 
-        image.alt =
-            playlist.name || "";
+            image.src =
+                playlist.image || "";
 
-        const name =
-            document.createElement("div");
+            image.alt =
+                playlist.name || "";
 
-        name.className =
-            "playlistName";
+            const name =
+                document.createElement(
+                    "div"
+                );
 
-        name.textContent =
-            playlist.name || "";
+            name.className =
+                "playlistName";
 
-        const tracks =
-            document.createElement("span");
+            name.textContent =
+                playlist.name || "";
 
-        tracks.className =
-            "playlistTracks";
+            const tracks =
+                document.createElement(
+                    "span"
+                );
 
-        tracks.textContent =
-            `${playlist.tracks || 0} canciones`;
+            tracks.className =
+                "playlistTracks";
 
-        card.append(
-            image,
-            name,
-            tracks
-        );
+            tracks.textContent =
+                `${playlist.tracks || 0} canciones`;
 
-        card.addEventListener(
-            "click",
-            () => selectPlaylist(playlist)
-        );
+            card.append(
+                image,
+                name,
+                tracks
+            );
 
-        fragment.appendChild(card);
-    });
+            card.addEventListener(
+                "click",
+                () => selectPlaylist(
+                    playlist
+                )
+            );
 
-    container.appendChild(fragment);
+            fragment.appendChild(
+                card
+            );
+        }
+    );
+
+    container.appendChild(
+        fragment
+    );
 }
 
 
 // =====================================================
-// SELECCIONAR PLAYLIST
+// SELECCIÓN
 // =====================================================
 
 function selectPlaylist(playlist) {
 
-    selectedPlaylist = playlist;
+    selectedPlaylist =
+        playlist;
 
     document
         .querySelectorAll(".playlist")
-        .forEach(card => {
-
+        .forEach(card =>
             card.classList.toggle(
                 "selected",
-                card.dataset.id === playlist.id
-            );
-        });
+                card.dataset.id ===
+                    playlist.id
+            )
+        );
 
     const selectedText =
         document.getElementById(
@@ -159,19 +199,16 @@ function selectPlaylist(playlist) {
     }
 
     updateStartButton?.();
-
-    console.log(
-        "🎵 Playlist seleccionada:",
-        playlist.name
-    );
 }
 
 
 // =====================================================
-// CANCIONES DE PLAYLIST
+// CANCIONES
 // =====================================================
 
-async function getPlaylistTracks(playlistId) {
+async function getPlaylistTracks(
+    playlistId
+) {
 
     if (!playlistId) {
         throw new Error(
@@ -179,16 +216,18 @@ async function getPlaylistTracks(playlistId) {
         );
     }
 
-    const response = await fetch(
-        `/api/playlists/${encodeURIComponent(playlistId)}/tracks`
-    );
+    const response =
+        await fetch(
+            `/api/playlists/${encodeURIComponent(
+                playlistId
+            )}/tracks`
+        );
 
     if (!response.ok) {
-        const error = await response.text();
 
         console.error(
-            "❌ Error obteniendo canciones:",
-            error
+            "Error obteniendo canciones:",
+            await response.text()
         );
 
         throw new Error(
@@ -196,7 +235,8 @@ async function getPlaylistTracks(playlistId) {
         );
     }
 
-    const data = await response.json();
+    const data =
+        await response.json();
 
     if (!Array.isArray(data)) {
         throw new Error(
@@ -206,9 +246,8 @@ async function getPlaylistTracks(playlistId) {
 
     return data
         .filter(track =>
-            track &&
-            track.uri &&
-            track.name
+            track?.uri &&
+            track?.name
         )
         .map(track => ({
             id: track.id,
@@ -216,17 +255,18 @@ async function getPlaylistTracks(playlistId) {
             name: track.name,
             artist: track.artist || "",
             album: track.album || "",
-            year:
-                Number.isInteger(Number(track.year))
-                    ? Number(track.year)
-                    : null,
+            year: Number.isInteger(
+                Number(track.year)
+            )
+                ? Number(track.year)
+                : null,
             cover: track.cover || null
         }));
 }
 
 
 // =====================================================
-// PLAYLIST SELECCIONADA
+// PLAYLIST ACTUAL
 // =====================================================
 
 function getSelectedPlaylist() {

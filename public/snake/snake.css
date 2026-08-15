@@ -137,11 +137,6 @@
     display: none !important;
 }
 
-.snakeOverlayIcon {
-    margin-bottom: 15px;
-    font-size: 48px;
-}
-
 .snakeOverlay h2 {
     margin: 8px 0 10px;
     font-size: 34px;
@@ -200,7 +195,6 @@
 }
 
 @media (max-width: 700px) {
-
     .snakeLayout {
         padding: 20px;
     }

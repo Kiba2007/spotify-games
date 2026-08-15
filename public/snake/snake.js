@@ -1,14 +1,10 @@
-// =====================================================
-// ESTADO
-// =====================================================
-
 let snakeTracks = [];
 let snakePlaylistName = "";
 
 let snake = [];
 let previousSnake = [];
-
 let food = null;
+
 let currentTrack = null;
 let currentTrackIndex = -1;
 
@@ -16,7 +12,6 @@ let direction = { x: 1, y: 0 };
 let nextDirection = { x: 1, y: 0 };
 
 let score = 0;
-
 let snakeInitialized = false;
 let snakeRunning = false;
 
@@ -24,66 +19,52 @@ let animationFrame = null;
 let lastFrameTime = 0;
 let accumulator = 0;
 
-const snakeImageCache = new Map();
+const imageCache = new Map();
+
+const SNAKE = {
+    cols: 20,
+    rows: 15,
+    cell: 40,
+    tick: 130
+};
 
 
 // =====================================================
-// CONFIG
-// =====================================================
-
-const SNAKE_COLS = 20;
-const SNAKE_ROWS = 15;
-const SNAKE_CELL = 40;
-const SNAKE_TICK = 130;
-
-
-// =====================================================
-// HELPERS
-// =====================================================
-
-function snakeEl(id) {
-    return document.getElementById(id);
-}
-
-function snakeCanvas() {
-    return snakeEl("gameCanvas");
-}
-
-
-// =====================================================
-// INICIALIZAR
+// INICIO
 // =====================================================
 
 function startSnake(tracks, playlistName) {
 
     if (!Array.isArray(tracks) || !tracks.length) {
-        console.error("❌ Snake necesita canciones.");
+        console.error("Snake necesita canciones.");
+        return;
+    }
+
+    const canvas =
+        document.getElementById("gameCanvas");
+
+    if (!canvas) {
+        console.error("No existe #gameCanvas.");
         return;
     }
 
     snakeInitialized = true;
-
     snakePlaylistName = playlistName || "";
+    snakeTracks = tracks.map(track => ({ ...track }));
 
-    snakeTracks = tracks.map(track => ({
-        ...track
-    }));
+    canvas.width =
+        SNAKE.cols * SNAKE.cell;
 
-    const canvas = snakeCanvas();
+    canvas.height =
+        SNAKE.rows * SNAKE.cell;
 
-    if (!canvas) {
-        console.error("❌ No existe #gameCanvas.");
-        return;
-    }
+    const playlistNameElement =
+        document.getElementById(
+            "gamePlaylistName"
+        );
 
-    canvas.width = SNAKE_COLS * SNAKE_CELL;
-    canvas.height = SNAKE_ROWS * SNAKE_CELL;
-
-    const playlistNameEl =
-        snakeEl("gamePlaylistName");
-
-    if (playlistNameEl) {
-        playlistNameEl.textContent =
+    if (playlistNameElement) {
+        playlistNameElement.textContent =
             snakePlaylistName;
     }
 
@@ -98,7 +79,6 @@ function startSnake(tracks, playlistName) {
     );
 
     preloadTracks();
-
     resetSnakeState();
 }
 
@@ -117,11 +97,13 @@ function resetSnakeState() {
         }))
     );
 
-    snake = [{
-        x: 10,
-        y: 7,
-        cover: null
-    }];
+    snake = [
+        {
+            x: 10,
+            y: 7,
+            cover: null
+        }
+    ];
 
     previousSnake = cloneSnake(snake);
 
@@ -176,14 +158,17 @@ async function beginSnake() {
         }))
     );
 
-    snake = [{
-        x: 10,
-        y: 7,
-        cover: null
-    }];
+    snake = [
+        {
+            x: 10,
+            y: 7,
+            cover: null
+        }
+    ];
 
     previousSnake = cloneSnake(snake);
 
+    food = null;
     currentTrack = null;
     currentTrackIndex = -1;
 
@@ -223,7 +208,7 @@ async function beginSnake() {
 
 
 // =====================================================
-// STOP
+// DETENER
 // =====================================================
 
 function stopSnake(pauseMusic = true) {
@@ -231,13 +216,18 @@ function stopSnake(pauseMusic = true) {
     snakeRunning = false;
 
     if (animationFrame !== null) {
-        cancelAnimationFrame(animationFrame);
+
+        cancelAnimationFrame(
+            animationFrame
+        );
+
         animationFrame = null;
     }
 
     if (
         pauseMusic &&
-        typeof pauseSpotify === "function"
+        typeof pauseSpotify ===
+            "function"
     ) {
         pauseSpotify();
     }
@@ -245,7 +235,7 @@ function stopSnake(pauseMusic = true) {
 
 
 // =====================================================
-// MOVIMIENTO SUAVE
+// BUCLE
 // =====================================================
 
 function snakeFrame(now) {
@@ -258,17 +248,22 @@ function snakeFrame(now) {
         lastFrameTime = now;
     }
 
-    let delta =
-        now - lastFrameTime;
-
-    delta = Math.min(delta, 250);
+    const delta =
+        Math.min(
+            now - lastFrameTime,
+            250
+        );
 
     lastFrameTime = now;
     accumulator += delta;
 
-    while (accumulator >= SNAKE_TICK) {
+    while (
+        accumulator >=
+        SNAKE.tick
+    ) {
 
-        accumulator -= SNAKE_TICK;
+        accumulator -=
+            SNAKE.tick;
 
         updateSnake();
 
@@ -277,10 +272,9 @@ function snakeFrame(now) {
         }
     }
 
-    const alpha =
-        accumulator / SNAKE_TICK;
-
-    drawSnake(alpha);
+    drawSnake(
+        accumulator / SNAKE.tick
+    );
 
     animationFrame =
         requestAnimationFrame(
@@ -290,7 +284,7 @@ function snakeFrame(now) {
 
 
 // =====================================================
-// TECLADO
+// CONTROLES
 // =====================================================
 
 function handleSnakeKeyboard(event) {
@@ -306,6 +300,7 @@ function handleSnakeKeyboard(event) {
         case "W":
 
             if (direction.y !== 1) {
+
                 nextDirection = {
                     x: 0,
                     y: -1
@@ -316,12 +311,12 @@ function handleSnakeKeyboard(event) {
 
             break;
 
-
         case "ArrowDown":
         case "s":
         case "S":
 
             if (direction.y !== -1) {
+
                 nextDirection = {
                     x: 0,
                     y: 1
@@ -332,12 +327,12 @@ function handleSnakeKeyboard(event) {
 
             break;
 
-
         case "ArrowLeft":
         case "a":
         case "A":
 
             if (direction.x !== 1) {
+
                 nextDirection = {
                     x: -1,
                     y: 0
@@ -348,12 +343,12 @@ function handleSnakeKeyboard(event) {
 
             break;
 
-
         case "ArrowRight":
         case "d":
         case "D":
 
             if (direction.x !== -1) {
+
                 nextDirection = {
                     x: 1,
                     y: 0
@@ -368,7 +363,7 @@ function handleSnakeKeyboard(event) {
 
 
 // =====================================================
-// UPDATE
+// MOVIMIENTO
 // =====================================================
 
 function updateSnake() {
@@ -386,30 +381,29 @@ function updateSnake() {
         oldSnake[0];
 
     const newHead = {
-        x: head.x + direction.x,
-        y: head.y + direction.y,
+        x:
+            head.x +
+            direction.x,
+
+        y:
+            head.y +
+            direction.y,
+
         cover: null
     };
 
 
-    // -----------------------------------------------
-    // PARED
-    // -----------------------------------------------
-
     if (
         newHead.x < 0 ||
-        newHead.x >= SNAKE_COLS ||
+        newHead.x >= SNAKE.cols ||
         newHead.y < 0 ||
-        newHead.y >= SNAKE_ROWS
+        newHead.y >= SNAKE.rows
     ) {
+
         gameOver();
         return;
     }
 
-
-    // -----------------------------------------------
-    // COMER
-    // -----------------------------------------------
 
     const ateFood =
         food &&
@@ -417,14 +411,11 @@ function updateSnake() {
         newHead.y === food.y;
 
 
-    // -----------------------------------------------
-    // COLISIÓN CON CUERPO
-    // -----------------------------------------------
-
     const collisionLimit =
         ateFood
             ? oldSnake.length
             : oldSnake.length - 1;
+
 
     for (
         let i = 1;
@@ -433,22 +424,22 @@ function updateSnake() {
     ) {
 
         if (
-            oldSnake[i].x === newHead.x &&
-            oldSnake[i].y === newHead.y
+            oldSnake[i].x ===
+                newHead.x &&
+            oldSnake[i].y ===
+                newHead.y
         ) {
+
             gameOver();
             return;
         }
     }
 
 
-    // -----------------------------------------------
-    // NUEVO MOVIMIENTO
-    // -----------------------------------------------
-
     const newSnake = [
         newHead
     ];
+
 
     for (
         let i = 0;
@@ -457,8 +448,12 @@ function updateSnake() {
     ) {
 
         newSnake.push({
-            x: oldSnake[i].x,
-            y: oldSnake[i].y,
+            x:
+                oldSnake[i].x,
+
+            y:
+                oldSnake[i].y,
+
             cover:
                 oldSnake[i + 1].cover ||
                 null
@@ -466,50 +461,56 @@ function updateSnake() {
     }
 
 
-    // -----------------------------------------------
-    // CRECER
-    // -----------------------------------------------
-
     if (ateFood) {
 
         score++;
+
         updateScore();
 
-        const oldTail =
+        const tail =
             oldSnake[
                 oldSnake.length - 1
             ];
 
-        /*
-         * Exactamente UN segmento nuevo.
-         * Se añade al FINAL.
-         */
         newSnake.push({
-            x: oldTail.x,
-            y: oldTail.y,
+
+            x:
+                tail.x,
+
+            y:
+                tail.y,
+
             cover:
                 food.track?.cover ||
                 null
         });
 
-        if (food.track?.cover) {
+
+        if (
+            food.track?.cover
+        ) {
+
             preloadImage(
                 food.track.cover
             );
         }
+
 
         nextSnakeTrack();
         createFood();
     }
 
 
-    previousSnake = oldSnake;
-    snake = newSnake;
+    previousSnake =
+        oldSnake;
+
+    snake =
+        newSnake;
 }
 
 
 // =====================================================
-// SIGUIENTE CANCIÓN
+// CAMBIAR CANCIÓN
 // =====================================================
 
 async function nextSnakeTrack() {
@@ -520,6 +521,7 @@ async function nextSnakeTrack() {
 
     currentTrackIndex++;
 
+
     if (
         currentTrackIndex >=
         snakeTracks.length
@@ -527,31 +529,42 @@ async function nextSnakeTrack() {
 
         currentTrackIndex = 0;
 
-        snakeTracks = shuffle(
-            snakeTracks.map(track => ({
-                ...track
-            }))
-        );
+        snakeTracks =
+            shuffle(
+                snakeTracks.map(
+                    track => ({
+                        ...track
+                    })
+                )
+            );
     }
+
 
     currentTrack =
         snakeTracks[
             currentTrackIndex
         ];
 
+
     if (!currentTrack) {
         return;
     }
+
 
     updateTrackUI(
         currentTrack
     );
 
-    if (currentTrack.cover) {
+
+    if (
+        currentTrack.cover
+    ) {
+
         preloadImage(
             currentTrack.cover
         );
     }
+
 
     try {
 
@@ -562,7 +575,7 @@ async function nextSnakeTrack() {
     } catch (error) {
 
         console.error(
-            "❌ Error reproduciendo Snake:",
+            "Error reproduciendo Snake:",
             error
         );
     }
@@ -582,16 +595,22 @@ function createFood() {
     let position;
     let attempts = 0;
 
+
     do {
 
         position = {
-            x: Math.floor(
-                Math.random() * SNAKE_COLS
-            ),
 
-            y: Math.floor(
-                Math.random() * SNAKE_ROWS
-            )
+            x:
+                Math.floor(
+                    Math.random() *
+                    SNAKE.cols
+                ),
+
+            y:
+                Math.floor(
+                    Math.random() *
+                    SNAKE.rows
+                )
         };
 
         attempts++;
@@ -599,19 +618,32 @@ function createFood() {
     } while (
         snake.some(
             segment =>
-                segment.x === position.x &&
-                segment.y === position.y
+                segment.x ===
+                    position.x &&
+                segment.y ===
+                    position.y
         ) &&
         attempts < 500
     );
 
+
     food = {
-        x: position.x,
-        y: position.y,
-        track: currentTrack
+
+        x:
+            position.x,
+
+        y:
+            position.y,
+
+        track:
+            currentTrack
     };
 
-    if (currentTrack.cover) {
+
+    if (
+        currentTrack.cover
+    ) {
+
         preloadImage(
             currentTrack.cover
         );
@@ -620,20 +652,25 @@ function createFood() {
 
 
 // =====================================================
-// DIBUJAR TODO
+// DIBUJO
 // =====================================================
 
 function drawSnake(alpha = 0) {
 
     const canvas =
-        snakeCanvas();
+        document.getElementById(
+            "gameCanvas"
+        );
 
     if (!canvas) {
         return;
     }
 
     const ctx =
-        canvas.getContext("2d");
+        canvas.getContext(
+            "2d"
+        );
+
 
     ctx.clearRect(
         0,
@@ -641,6 +678,7 @@ function drawSnake(alpha = 0) {
         canvas.width,
         canvas.height
     );
+
 
     ctx.fillStyle =
         "#080808";
@@ -651,6 +689,7 @@ function drawSnake(alpha = 0) {
         canvas.width,
         canvas.height
     );
+
 
     drawGrid(ctx);
     drawFood(ctx);
@@ -666,18 +705,19 @@ function drawSnake(alpha = 0) {
 function drawGrid(ctx) {
 
     ctx.strokeStyle =
-        "#111111";
+        "#111";
 
     ctx.lineWidth = 1;
 
+
     for (
         let x = 0;
-        x <= SNAKE_COLS;
+        x <= SNAKE.cols;
         x++
     ) {
 
         const px =
-            x * SNAKE_CELL;
+            x * SNAKE.cell;
 
         ctx.beginPath();
 
@@ -688,20 +728,22 @@ function drawGrid(ctx) {
 
         ctx.lineTo(
             px,
-            SNAKE_ROWS * SNAKE_CELL
+            SNAKE.rows *
+                SNAKE.cell
         );
 
         ctx.stroke();
     }
 
+
     for (
         let y = 0;
-        y <= SNAKE_ROWS;
+        y <= SNAKE.rows;
         y++
     ) {
 
         const py =
-            y * SNAKE_CELL;
+            y * SNAKE.cell;
 
         ctx.beginPath();
 
@@ -711,7 +753,8 @@ function drawGrid(ctx) {
         );
 
         ctx.lineTo(
-            SNAKE_COLS * SNAKE_CELL,
+            SNAKE.cols *
+                SNAKE.cell,
             py
         );
 
@@ -731,17 +774,20 @@ function drawFood(ctx) {
     }
 
     const px =
-        food.x * SNAKE_CELL;
+        food.x *
+        SNAKE.cell;
 
     const py =
-        food.y * SNAKE_CELL;
+        food.y *
+        SNAKE.cell;
 
     const image =
         food.track?.cover
-            ? snakeImageCache.get(
+            ? imageCache.get(
                 food.track.cover
             )
             : null;
+
 
     if (
         image &&
@@ -751,10 +797,12 @@ function drawFood(ctx) {
 
         ctx.drawImage(
             image,
+
             px + 2,
             py + 2,
-            SNAKE_CELL - 4,
-            SNAKE_CELL - 4
+
+            SNAKE.cell - 4,
+            SNAKE.cell - 4
         );
 
     } else {
@@ -765,8 +813,9 @@ function drawFood(ctx) {
         ctx.fillRect(
             px + 3,
             py + 3,
-            SNAKE_CELL - 6,
-            SNAKE_CELL - 6
+
+            SNAKE.cell - 6,
+            SNAKE.cell - 6
         );
     }
 }
@@ -794,32 +843,39 @@ function drawBody(
             previousSnake[i] ||
             current;
 
+
         const x =
             previous.x +
             (
                 current.x -
                 previous.x
-            ) * alpha;
+            ) *
+            alpha;
+
 
         const y =
             previous.y +
             (
                 current.y -
                 previous.y
-            ) * alpha;
+            ) *
+            alpha;
+
 
         const px =
-            x * SNAKE_CELL;
+            x * SNAKE.cell;
 
         const py =
-            y * SNAKE_CELL;
+            y * SNAKE.cell;
+
 
         const image =
             current.cover
-                ? snakeImageCache.get(
+                ? imageCache.get(
                     current.cover
                 )
                 : null;
+
 
         if (
             image &&
@@ -829,10 +885,12 @@ function drawBody(
 
             ctx.drawImage(
                 image,
+
                 px + 2,
                 py + 2,
-                SNAKE_CELL - 4,
-                SNAKE_CELL - 4
+
+                SNAKE.cell - 4,
+                SNAKE.cell - 4
             );
 
         } else {
@@ -843,8 +901,9 @@ function drawBody(
             ctx.fillRect(
                 px + 3,
                 py + 3,
-                SNAKE_CELL - 6,
-                SNAKE_CELL - 6
+
+                SNAKE.cell - 6,
+                SNAKE.cell - 6
             );
         }
     }
@@ -864,6 +923,7 @@ function drawHead(
         return;
     }
 
+
     const current =
         snake[0];
 
@@ -871,37 +931,47 @@ function drawHead(
         previousSnake[0] ||
         current;
 
+
     const x =
         previous.x +
         (
             current.x -
             previous.x
-        ) * alpha;
+        ) *
+        alpha;
+
 
     const y =
         previous.y +
         (
             current.y -
             previous.y
-        ) * alpha;
+        ) *
+        alpha;
+
 
     const centerX =
-        x * SNAKE_CELL +
-        SNAKE_CELL / 2;
+        x * SNAKE.cell +
+        SNAKE.cell / 2;
 
     const centerY =
-        y * SNAKE_CELL +
-        SNAKE_CELL / 2;
+        y * SNAKE.cell +
+        SNAKE.cell / 2;
+
 
     const half =
-        SNAKE_CELL * 0.4;
+        SNAKE.cell * .4;
+
 
     ctx.fillStyle =
         "#1ed760";
 
     ctx.beginPath();
 
-    if (direction.x === 1) {
+
+    if (
+        direction.x === 1
+    ) {
 
         ctx.moveTo(
             centerX + half,
@@ -974,6 +1044,7 @@ function drawHead(
         );
     }
 
+
     ctx.closePath();
     ctx.fill();
 
@@ -1000,11 +1071,15 @@ function drawEyes(
 
     const offset = 6;
 
-    if (direction.x !== 0) {
+
+    if (
+        direction.x !== 0
+    ) {
 
         const eyeX =
             centerX +
             direction.x * 8;
+
 
         ctx.beginPath();
 
@@ -1017,6 +1092,7 @@ function drawEyes(
         );
 
         ctx.fill();
+
 
         ctx.beginPath();
 
@@ -1036,6 +1112,7 @@ function drawEyes(
             centerY +
             direction.y * 8;
 
+
         ctx.beginPath();
 
         ctx.arc(
@@ -1047,6 +1124,7 @@ function drawEyes(
         );
 
         ctx.fill();
+
 
         ctx.beginPath();
 
@@ -1069,14 +1147,16 @@ function drawEyes(
 
 function preloadTracks() {
 
-    snakeTracks.forEach(track => {
+    snakeTracks.forEach(
+        track => {
 
-        if (track.cover) {
-            preloadImage(
-                track.cover
-            );
+            if (track.cover) {
+                preloadImage(
+                    track.cover
+                );
+            }
         }
-    });
+    );
 }
 
 
@@ -1087,12 +1167,13 @@ function preloadImage(src) {
     }
 
     if (
-        snakeImageCache.has(src)
+        imageCache.has(src)
     ) {
-        return snakeImageCache.get(
+        return imageCache.get(
             src
         );
     }
+
 
     const image =
         new Image();
@@ -1103,7 +1184,8 @@ function preloadImage(src) {
     image.src =
         src;
 
-    snakeImageCache.set(
+
+    imageCache.set(
         src,
         image
     );
@@ -1113,7 +1195,7 @@ function preloadImage(src) {
 
 
 // =====================================================
-// TRACK UI
+// INTERFAZ
 // =====================================================
 
 function updateTrackUI(
@@ -1121,30 +1203,40 @@ function updateTrackUI(
 ) {
 
     const image =
-        snakeEl("gameAlbumImage");
+        document.getElementById(
+            "gameAlbumImage"
+        );
 
     const name =
-        snakeEl("gameTrackName");
+        document.getElementById(
+            "gameTrackName"
+        );
 
     const artist =
-        snakeEl("gameArtistName");
+        document.getElementById(
+            "gameArtistName"
+        );
+
 
     if (!track) {
 
-        if (image) {
-            image.removeAttribute("src");
-        }
+        image?.removeAttribute(
+            "src"
+        );
 
         if (name) {
-            name.textContent = "—";
+            name.textContent =
+                "—";
         }
 
         if (artist) {
-            artist.textContent = "—";
+            artist.textContent =
+                "—";
         }
 
         return;
     }
+
 
     if (image) {
         image.src =
@@ -1163,39 +1255,65 @@ function updateTrackUI(
 }
 
 
-// =====================================================
-// SCORE
-// =====================================================
-
 function updateScore() {
 
     const scoreElement =
-        snakeEl("score");
+        document.getElementById(
+            "score"
+        );
 
     if (scoreElement) {
         scoreElement.textContent =
-            String(score);
+            score;
     }
 }
 
 
 // =====================================================
-// READY
+// PANTALLAS
 // =====================================================
 
 function showSnakeReady() {
 
-    snakeEl("snakeReady")
-        ?.classList.remove("hidden");
+    document
+        .getElementById(
+            "snakeReady"
+        )
+        ?.classList.remove(
+            "hidden"
+        );
 
-    snakeEl("snakeGameOver")
-        ?.classList.add("hidden");
+    document
+        .getElementById(
+            "snakeGameOver"
+        )
+        ?.classList.add(
+            "hidden"
+        );
 }
+
 
 function hideSnakeReady() {
 
-    snakeEl("snakeReady")
-        ?.classList.add("hidden");
+    document
+        .getElementById(
+            "snakeReady"
+        )
+        ?.classList.add(
+            "hidden"
+        );
+}
+
+
+function hideSnakeGameOver() {
+
+    document
+        .getElementById(
+            "snakeGameOver"
+        )
+        ?.classList.add(
+            "hidden"
+        );
 }
 
 
@@ -1207,13 +1325,19 @@ function gameOver() {
 
     snakeRunning = false;
 
-    if (animationFrame !== null) {
+    if (
+        animationFrame !==
+        null
+    ) {
+
         cancelAnimationFrame(
             animationFrame
         );
 
-        animationFrame = null;
+        animationFrame =
+            null;
     }
+
 
     if (
         typeof pauseSpotify ===
@@ -1222,35 +1346,26 @@ function gameOver() {
         pauseSpotify();
     }
 
+
     const finalScore =
-        snakeEl(
+        document.getElementById(
             "snakeFinalScore"
         );
 
     if (finalScore) {
+
         finalScore.textContent =
             `Puntuación: ${score}`;
     }
 
-    snakeEl(
-        "snakeGameOver"
-    )?.classList.remove(
-        "hidden"
-    );
-}
 
-
-// =====================================================
-// GAME OVER HIDE
-// =====================================================
-
-function hideSnakeGameOver() {
-
-    snakeEl(
-        "snakeGameOver"
-    )?.classList.add(
-        "hidden"
-    );
+    document
+        .getElementById(
+            "snakeGameOver"
+        )
+        ?.classList.remove(
+            "hidden"
+        );
 }
 
 
@@ -1258,7 +1373,9 @@ function hideSnakeGameOver() {
 // UTILIDADES
 // =====================================================
 
-function cloneSnake(source) {
+function cloneSnake(
+    source
+) {
 
     return source.map(
         segment => ({
@@ -1271,7 +1388,10 @@ function cloneSnake(source) {
     );
 }
 
-function shuffle(array) {
+
+function shuffle(
+    array
+) {
 
     for (
         let i = array.length - 1;
@@ -1281,7 +1401,8 @@ function shuffle(array) {
 
         const j =
             Math.floor(
-                Math.random() * (i + 1)
+                Math.random() *
+                (i + 1)
             );
 
         [
@@ -1310,15 +1431,18 @@ document.addEventListener(
                 "#startSnakeButton"
             )
         ) {
+
             beginSnake();
             return;
         }
+
 
         if (
             event.target.closest(
                 "#restartSnakeButton"
             )
         ) {
+
             resetSnakeState();
             beginSnake();
         }

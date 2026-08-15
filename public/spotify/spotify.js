@@ -4,97 +4,86 @@ let spotifyReady = null;
 
 
 // =====================================================
-// TOKEN
-// =====================================================
-
-async function getSpotifyToken() {
-    const response = await fetch("/auth/token");
-
-    if (!response.ok) {
-        throw new Error("No autenticado en Spotify.");
-    }
-
-    const data = await response.json();
-
-    return data.access_token;
-}
-
-
-// =====================================================
-// INICIALIZAR PLAYER
+// INICIALIZAR
 // =====================================================
 
 function initSpotify() {
-    if (spotifyReady) {
-        return spotifyReady;
-    }
 
-    spotifyReady = initializeSpotify();
+    if (!spotifyReady) {
+        spotifyReady =
+            initializeSpotify();
+    }
 
     return spotifyReady;
 }
+
 
 async function initializeSpotify() {
 
     if (
         !window.Spotify ||
-        typeof window.Spotify.Player !== "function"
+        typeof window.Spotify.Player !==
+            "function"
     ) {
         throw new Error(
             "Spotify Web Playback SDK no está cargado."
         );
     }
 
-    const token = await getSpotifyToken();
+    const token =
+        await getSpotifyToken();
 
     const player =
         new window.Spotify.Player({
             name: "Spotify Games",
-            getOAuthToken: callback => callback(token),
+            getOAuthToken: callback =>
+                callback(token),
             volume: 0.5
         });
 
     spotifyPlayer = player;
 
 
-    // PLAYER LISTO
+    // Player listo
 
     player.addListener(
         "ready",
         async ({ device_id }) => {
 
-            spotifyDeviceId = device_id;
-
-            console.log(
-                "🎵 Spotify Player listo:",
-                device_id
-            );
+            spotifyDeviceId =
+                device_id;
 
             try {
-                const response = await fetch(
-                    "/api/transfer",
-                    {
-                        method: "PUT",
-                        headers: {
-                            "Content-Type":
-                                "application/json"
-                        },
-                        body: JSON.stringify({
-                            deviceId: device_id
-                        })
-                    }
-                );
+
+                const response =
+                    await fetch(
+                        "/api/transfer",
+                        {
+                            method: "PUT",
+                            headers: {
+                                "Content-Type":
+                                    "application/json"
+                            },
+                            body:
+                                JSON.stringify({
+                                    deviceId:
+                                        device_id
+                                })
+                        }
+                    );
 
                 if (!response.ok) {
+
                     console.error(
-                        "❌ Error transfiriendo Spotify:",
+                        "Error transfiriendo Spotify:",
                         await response.text()
                     );
                 }
 
             } catch (error) {
+
                 console.error(
-                    "❌ Error transfiriendo Spotify:",
+                    "Error transfiriendo Spotify:",
                     error
                 );
             }
@@ -102,14 +91,15 @@ async function initializeSpotify() {
     );
 
 
-    // ESTADO DE REPRODUCCIÓN
+    // Estado de reproducción
 
     player.addListener(
         "player_state_changed",
         state => {
 
             if (
-                typeof window.onSpotifyGameStateChanged ===
+                typeof window
+                    .onSpotifyGameStateChanged ===
                 "function"
             ) {
                 window.onSpotifyGameStateChanged(
@@ -120,16 +110,11 @@ async function initializeSpotify() {
     );
 
 
-    // PLAYER NO DISPONIBLE
+    // Player no disponible
 
     player.addListener(
         "not_ready",
         ({ device_id }) => {
-
-            console.log(
-                "Spotify Player no disponible:",
-                device_id
-            );
 
             if (
                 spotifyDeviceId ===
@@ -141,50 +126,51 @@ async function initializeSpotify() {
     );
 
 
-    // ERRORES
+    // Errores
+
+    const logError =
+        (type, message) =>
+            console.error(
+                `Spotify ${type}:`,
+                message
+            );
 
     player.addListener(
         "initialization_error",
-        ({ message }) => {
-            console.error(
-                "Spotify initialization error:",
+        ({ message }) =>
+            logError(
+                "initialization",
                 message
-            );
-        }
+            )
     );
 
     player.addListener(
         "authentication_error",
-        ({ message }) => {
-            console.error(
-                "Spotify authentication error:",
+        ({ message }) =>
+            logError(
+                "authentication",
                 message
-            );
-        }
+            )
     );
 
     player.addListener(
         "account_error",
-        ({ message }) => {
-            console.error(
-                "Spotify account error:",
+        ({ message }) =>
+            logError(
+                "account",
                 message
-            );
-        }
+            )
     );
 
     player.addListener(
         "playback_error",
-        ({ message }) => {
-            console.error(
-                "Spotify playback error:",
+        ({ message }) =>
+            logError(
+                "playback",
                 message
-            );
-        }
+            )
     );
 
-
-    // CONECTAR
 
     const connected =
         await player.connect();
@@ -195,23 +181,20 @@ async function initializeSpotify() {
         );
     }
 
-    console.log(
-        "✅ Spotify Player conectado"
-    );
-
     return player;
 }
 
 
 // =====================================================
-// SDK READY
+// SDK
 // =====================================================
 
-window.onSpotifyWebPlaybackSDKReady = () => {
-    console.log(
-        "🎵 Spotify Web Playback SDK cargado"
-    );
-};
+window.onSpotifyWebPlaybackSDKReady =
+    () => {
+        console.log(
+            "Spotify Web Playback SDK cargado"
+        );
+    };
 
 
 // =====================================================
@@ -233,10 +216,12 @@ async function waitForSpotify() {
 
 
 // =====================================================
-// REPRODUCIR CANCIÓN
+// REPRODUCCIÓN
 // =====================================================
 
-async function playSpotifyTrack(trackUri) {
+async function playSpotifyTrack(
+    trackUri
+) {
 
     if (!trackUri) {
         throw new Error(
@@ -247,22 +232,25 @@ async function playSpotifyTrack(trackUri) {
     const deviceId =
         await waitForSpotify();
 
-    const response = await fetch(
-        "/api/play",
-        {
-            method: "PUT",
-            headers: {
-                "Content-Type":
-                    "application/json"
-            },
-            body: JSON.stringify({
-                deviceId,
-                trackUri
-            })
-        }
-    );
+    const response =
+        await fetch(
+            "/api/play",
+            {
+                method: "PUT",
+                headers: {
+                    "Content-Type":
+                        "application/json"
+                },
+                body:
+                    JSON.stringify({
+                        deviceId,
+                        trackUri
+                    })
+            }
+        );
 
     if (!response.ok) {
+
         const error =
             await response.text();
 
@@ -271,29 +259,24 @@ async function playSpotifyTrack(trackUri) {
             "Error reproduciendo canción."
         );
     }
-
-    console.log(
-        "▶ Reproduciendo:",
-        trackUri
-    );
 }
 
 
-// =====================================================
-// PAUSAR
-// =====================================================
-
 async function pauseSpotify() {
+
     try {
+
         await fetch(
             "/api/pause",
             {
                 method: "PUT"
             }
         );
+
     } catch (error) {
+
         console.error(
-            "❌ Error pausando Spotify:",
+            "Error pausando Spotify:",
             error
         );
     }
@@ -301,33 +284,42 @@ async function pauseSpotify() {
 
 
 // =====================================================
-// CONTROLES DEL WEB PLAYER
+// CONTROLES
 // =====================================================
 
 async function spotifyResume() {
-    const player = await initSpotify();
-    return player.resume();
+    return (
+        await initSpotify()
+    ).resume();
 }
+
 
 async function spotifyPause() {
-    const player = await initSpotify();
-    return player.pause();
+    return (
+        await initSpotify()
+    ).pause();
 }
+
 
 async function spotifyTogglePlay() {
-    const player = await initSpotify();
-    return player.togglePlay();
+    return (
+        await initSpotify()
+    ).togglePlay();
 }
 
-async function spotifySeek(positionMs) {
-    const player = await initSpotify();
 
-    return player.seek(
+async function spotifySeek(positionMs) {
+
+    return (
+        await initSpotify()
+    ).seek(
         Math.round(positionMs)
     );
 }
 
+
 async function spotifyGetState() {
+
     if (!spotifyPlayer) {
         return null;
     }

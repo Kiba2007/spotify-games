@@ -37,22 +37,18 @@ button {
 }
 
 
-/* =====================================================
-   TEXTO
-===================================================== */
+/* Texto */
 
 .eyebrow {
     display: block;
     color: #1db954;
     font-size: 11px;
-    font-weight: bold;
+    font-weight: 700;
     letter-spacing: 3px;
 }
 
 
-/* =====================================================
-   BOTONES
-===================================================== */
+/* Botones */
 
 .primaryButton,
 .secondaryButton {
@@ -63,11 +59,9 @@ button {
     padding: 0 18px;
     border: 0;
     border-radius: 8px;
-    font-weight: bold;
+    font-weight: 700;
     text-decoration: none;
-    transition:
-        background .15s ease,
-        transform .15s ease;
+    transition: background .15s, transform .15s;
 }
 
 .primaryButton {
@@ -98,9 +92,7 @@ button:disabled {
 }
 
 
-/* =====================================================
-   LOGIN
-===================================================== */
+/* Login */
 
 #loginScreen {
     display: flex;
@@ -130,9 +122,7 @@ button:disabled {
 }
 
 
-/* =====================================================
-   MENÚ
-===================================================== */
+/* Menú */
 
 #menuScreen {
     padding: 40px;
@@ -153,14 +143,11 @@ button:disabled {
 }
 
 
-/* =====================================================
-   JUEGOS
-===================================================== */
+/* Juegos */
 
 .gameSelector {
     max-width: 1200px;
     margin: 0 auto 40px;
-
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 15px;
@@ -169,7 +156,6 @@ button:disabled {
 .gameCard {
     min-height: 150px;
     padding: 25px;
-
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -178,16 +164,15 @@ button:disabled {
 
     background: #121212;
     color: #fff;
-
     border: 1px solid #242424;
     border-radius: 14px;
 
     text-align: left;
 
     transition:
-        border-color .15s ease,
-        background .15s ease,
-        transform .15s ease;
+        border-color .15s,
+        background .15s,
+        transform .15s;
 }
 
 .gameCard:hover {
@@ -201,7 +186,9 @@ button:disabled {
 }
 
 .gameIcon {
-    font-size: 35px;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 1px;
 }
 
 .gameCard strong {
@@ -213,14 +200,11 @@ button:disabled {
 }
 
 
-/* =====================================================
-   PLAYLISTS
-===================================================== */
+/* Playlists */
 
 .playlistHeader {
     max-width: 1200px;
     margin: 0 auto 15px;
-
     display: flex;
     justify-content: space-between;
     align-items: flex-end;
@@ -239,7 +223,6 @@ button:disabled {
 .playlistGrid {
     max-width: 1200px;
     margin: 0 auto 25px;
-
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 15px;
@@ -247,18 +230,16 @@ button:disabled {
 
 .playlist {
     padding: 12px;
-
     background: #121212;
     border: 1px solid #242424;
     border-radius: 12px;
-
     color: #fff;
     text-align: left;
     overflow: hidden;
 
     transition:
-        border-color .15s ease,
-        background .15s ease;
+        border-color .15s,
+        background .15s;
 }
 
 .playlist:hover {
@@ -274,7 +255,6 @@ button:disabled {
     width: 100%;
     aspect-ratio: 1;
     margin-bottom: 10px;
-
     border-radius: 8px;
     object-fit: cover;
     background: #1c1c1c;
@@ -284,7 +264,7 @@ button:disabled {
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
-    font-weight: bold;
+    font-weight: 700;
 }
 
 .playlistTracks {
@@ -295,14 +275,11 @@ button:disabled {
 }
 
 
-/* =====================================================
-   FOOTER
-===================================================== */
+/* Footer */
 
 .menuFooter {
     position: sticky;
     bottom: 0;
-
     max-width: 1200px;
     margin: 0 auto;
     padding: 15px 0;
@@ -320,9 +297,7 @@ button:disabled {
 }
 
 
-/* =====================================================
-   RESPONSIVE
-===================================================== */
+/* Responsive */
 
 @media (max-width: 1000px) {
 

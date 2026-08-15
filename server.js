@@ -10,22 +10,57 @@ let accessToken = null;
 app.use(express.json());
 app.use(express.static("public"));
 
-
-// =====================================================
-// CONFIGURACIÓN SPOTIFY
-// =====================================================
-
-const SPOTIFY_CLIENT_ID =
-    process.env.SPOTIFY_CLIENT_ID;
-
-const SPOTIFY_CLIENT_SECRET =
-    process.env.SPOTIFY_CLIENT_SECRET;
+const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
+const CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;
 
 const REDIRECT_URI =
     "http://127.0.0.1:3000/callback";
 
 const HIPSTER_PLAYLIST_ID =
     "323RDMtCMPS3Jb8cvv0QeE";
+
+const SPOTIFY_API =
+    "https://api.spotify.com/v1";
+
+
+// =====================================================
+// SPOTIFY
+// =====================================================
+
+function spotifyHeaders() {
+    return {
+        Authorization: `Bearer ${accessToken}`
+    };
+}
+
+
+async function spotifyFetch(path, options = {}) {
+
+    return fetch(
+        `${SPOTIFY_API}${path}`,
+        {
+            ...options,
+            headers: {
+                ...spotifyHeaders(),
+                ...(options.headers || {})
+            }
+        }
+    );
+}
+
+
+function requireAuth(req, res) {
+
+    if (accessToken) {
+        return true;
+    }
+
+    res.status(401).json({
+        error: "No hay usuario autenticado"
+    });
+
+    return false;
+}
 
 
 // =====================================================
@@ -44,25 +79,21 @@ app.get("/login", (req, res) => {
     ].join(" ");
 
     const params = new URLSearchParams({
-        client_id: SPOTIFY_CLIENT_ID,
+        client_id: CLIENT_ID,
         response_type: "code",
         redirect_uri: REDIRECT_URI,
         scope
     });
 
     res.redirect(
-        `https://accounts.spotify.com/authorize?${params.toString()}`
+        `https://accounts.spotify.com/authorize?${params}`
     );
 });
 
 
-// =====================================================
-// CALLBACK
-// =====================================================
-
 app.get("/callback", async (req, res) => {
 
-    const code = req.query.code;
+    const { code } = req.query;
 
     if (!code) {
         return res
@@ -76,18 +107,16 @@ app.get("/callback", async (req, res) => {
             "https://accounts.spotify.com/api/token",
             {
                 method: "POST",
-
                 headers: {
                     "Content-Type":
                         "application/x-www-form-urlencoded"
                 },
-
                 body: new URLSearchParams({
                     grant_type: "authorization_code",
                     code,
                     redirect_uri: REDIRECT_URI,
-                    client_id: SPOTIFY_CLIENT_ID,
-                    client_secret: SPOTIFY_CLIENT_SECRET
+                    client_id: CLIENT_ID,
+                    client_secret: CLIENT_SECRET
                 })
             }
         );
@@ -113,7 +142,7 @@ app.get("/callback", async (req, res) => {
             data.access_token;
 
         console.log(
-            "✅ Access Token conseguido"
+            "Access Token conseguido"
         );
 
         res.redirect("/");
@@ -134,14 +163,9 @@ app.get("/callback", async (req, res) => {
 });
 
 
-// =====================================================
-// TOKEN FRONTEND
-// =====================================================
-
 app.get("/auth/token", (req, res) => {
 
     if (!accessToken) {
-
         return res.status(401).json({
             error:
                 "No hay usuario autenticado"
@@ -156,108 +180,292 @@ app.get("/auth/token", (req, res) => {
 
 
 // =====================================================
+// HELPERS DE PLAYLISTS
+// =====================================================
+
+function getTrackYear(track) {
+
+    const date =
+        track.album?.release_date;
+
+    const year =
+        parseInt(
+            date?.slice(0, 4),
+            10
+        );
+
+    return Number.isInteger(year)
+        ? year
+        : null;
+}
+
+
+function formatTrack(track) {
+
+    return {
+        id: track.id,
+        uri: track.uri,
+        name: track.name,
+
+        artist:
+            (track.artists || [])
+                .map(artist => artist.name)
+                .join(", "),
+
+        album:
+            track.album?.name || "",
+
+        year:
+            getTrackYear(track),
+
+        cover:
+            track.album?.images?.[0]?.url ||
+            track.album?.images?.[1]?.url ||
+            track.album?.images?.[2]?.url ||
+            null
+    };
+}
+
+
+function validTrack(track) {
+
+    return (
+        track &&
+        track.type === "track" &&
+        track.uri
+    );
+}
+
+
+async function getPlaylistPage(
+    playlistId,
+    offset = 0,
+    limit = 50
+) {
+
+    const response =
+        await spotifyFetch(
+            `/playlists/${encodeURIComponent(
+                playlistId
+            )}/items?limit=${limit}&offset=${offset}`
+        );
+
+    const data =
+        await response.json();
+
+    if (!response.ok) {
+        throw new Error(
+            data?.error?.message ||
+            "Error obteniendo canciones."
+        );
+    }
+
+    return data;
+}
+
+
+async function getPlaylistTotal(
+    playlistId
+) {
+
+    const response =
+        await spotifyFetch(
+            `/playlists/${encodeURIComponent(
+                playlistId
+            )}`
+        );
+
+    const data =
+        await response.json();
+
+    if (!response.ok) {
+        throw new Error(
+            data?.error?.message ||
+            "Error obteniendo playlist."
+        );
+    }
+
+    return {
+        name:
+            data.name || "",
+        total:
+            data.items?.total ??
+            data.tracks?.total ??
+            0
+    };
+}
+
+
+async function getAllPlaylistTracks(
+    playlistId
+) {
+
+    const tracks = [];
+    let offset = 0;
+
+    while (true) {
+
+        const data =
+            await getPlaylistPage(
+                playlistId,
+                offset,
+                50
+            );
+
+        const items =
+            data.items || [];
+
+        for (
+            const item of items
+        ) {
+
+            const track =
+                item.item;
+
+            if (validTrack(track)) {
+                tracks.push(
+                    formatTrack(track)
+                );
+            }
+        }
+
+        if (items.length < 50) {
+            break;
+        }
+
+        offset += 50;
+    }
+
+    return tracks;
+}
+
+
+function uniqueTracks(tracks) {
+
+    const seen = new Set();
+
+    return tracks.filter(
+        track => {
+
+            if (seen.has(track.id)) {
+                return false;
+            }
+
+            seen.add(track.id);
+            return true;
+        }
+    );
+}
+
+
+function shuffle(array) {
+
+    for (
+        let i = array.length - 1;
+        i > 0;
+        i--
+    ) {
+
+        const j =
+            Math.floor(
+                Math.random() *
+                (i + 1)
+            );
+
+        [
+            array[i],
+            array[j]
+        ] = [
+            array[j],
+            array[i]
+        ];
+    }
+
+    return array;
+}
+
+
+// =====================================================
 // PLAYLISTS DEL USUARIO
 // =====================================================
 
-app.get("/api/playlists", async (req, res) => {
+app.get(
+    "/api/playlists",
+    async (req, res) => {
 
-    if (!accessToken) {
-
-        return res.status(401).json({
-            error:
-                "No hay usuario autenticado"
-        });
-    }
-
-    try {
-
-        const response =
-            await fetch(
-                "https://api.spotify.com/v1/me/playlists?limit=50",
-                {
-                    headers: {
-                        Authorization:
-                            `Bearer ${accessToken}`
-                    }
-                }
-            );
-
-        const data =
-            await response.json();
-
-        if (!response.ok) {
-
-            console.error(
-                "Error obteniendo playlists:",
-                data
-            );
-
-            return res
-                .status(response.status)
-                .json(data);
+        if (!requireAuth(req, res)) {
+            return;
         }
 
-        const playlists =
-            (data.items || []).map(
-                playlist => ({
+        try {
 
-                    id:
-                        playlist.id,
+            const response =
+                await spotifyFetch(
+                    "/me/playlists?limit=50"
+                );
 
-                    name:
-                        playlist.name,
+            const data =
+                await response.json();
 
-                    image:
-                        playlist.images?.[0]?.url ||
-                        null,
+            if (!response.ok) {
 
-                    tracks:
-                        playlist.items?.total ??
-                        playlist.tracks?.total ??
-                        0,
+                return res
+                    .status(response.status)
+                    .json(data);
+            }
 
-                    uri:
-                        playlist.uri
-                })
+            const playlists =
+                (data.items || [])
+                    .map(
+                        playlist => ({
+                            id:
+                                playlist.id,
+
+                            name:
+                                playlist.name,
+
+                            image:
+                                playlist.images?.[0]?.url ||
+                                null,
+
+                            tracks:
+                                playlist.items?.total ??
+                                playlist.tracks?.total ??
+                                0,
+
+                            uri:
+                                playlist.uri
+                        })
+                    );
+
+            res.json(playlists);
+
+        } catch (error) {
+
+            console.error(
+                "Error playlists:",
+                error
             );
 
-        res.json(playlists);
-
-    } catch (error) {
-
-        console.error(
-            "Error playlists:",
-            error
-        );
-
-        res.status(500).json({
-            error:
-                "No se pudieron obtener las playlists."
-        });
+            res.status(500).json({
+                error:
+                    "No se pudieron obtener las playlists."
+            });
+        }
     }
-});
+);
 
 
 // =====================================================
-// CANCIONES ALEATORIAS
-// =====================================================
-//
-// Máximo 50.
-// Pensado para Snake y otros usos generales.
-// Las posiciones se eligen de toda la playlist.
-// Incluye year.
+// 50 CANCIONES ALEATORIAS
 // =====================================================
 
 app.get(
     "/api/playlists/:playlistId/tracks",
     async (req, res) => {
 
-        if (!accessToken) {
-
-            return res.status(401).json({
-                error:
-                    "No hay usuario autenticado"
-            });
+        if (!requireAuth(req, res)) {
+            return;
         }
 
         const {
@@ -266,61 +474,17 @@ app.get(
 
         try {
 
-            // ---------------------------------------------
-            // INFO PLAYLIST
-            // ---------------------------------------------
-
-            const playlistResponse =
-                await fetch(
-                    `https://api.spotify.com/v1/playlists/${encodeURIComponent(
-                        playlistId
-                    )}`,
-                    {
-                        headers: {
-                            Authorization:
-                                `Bearer ${accessToken}`
-                        }
-                    }
+            const {
+                name,
+                total
+            } =
+                await getPlaylistTotal(
+                    playlistId
                 );
-
-            const playlistData =
-                await playlistResponse.json();
-
-            if (!playlistResponse.ok) {
-
-                console.error(
-                    "Error obteniendo playlist:",
-                    playlistData
-                );
-
-                return res
-                    .status(
-                        playlistResponse.status
-                    )
-                    .json(playlistData);
-            }
-
-            const total =
-                playlistData.items?.total ??
-                playlistData.tracks?.total ??
-                0;
-
-            console.log(
-                `🎵 Playlist: ${playlistData.name}`
-            );
-
-            console.log(
-                `🎵 Total canciones: ${total}`
-            );
 
             if (!total) {
                 return res.json([]);
             }
-
-
-            // ---------------------------------------------
-            // POSICIONES ALEATORIAS
-            // ---------------------------------------------
 
             const amount =
                 Math.min(50, total);
@@ -334,82 +498,35 @@ app.get(
 
                 positions.add(
                     Math.floor(
-                        Math.random() * total
+                        Math.random() *
+                        total
                     )
                 );
             }
 
+            const offsets =
+                new Set(
+                    [...positions].map(
+                        position =>
+                            Math.floor(
+                                position / 50
+                            ) * 50
+                    )
+                );
 
-            // ---------------------------------------------
-            // AGRUPAR POR PÁGINAS
-            // ---------------------------------------------
-
-            const pages =
-                new Map();
-
-            for (
-                const position of positions
-            ) {
-
-                const offset =
-                    Math.floor(
-                        position / 50
-                    ) * 50;
-
-                if (!pages.has(offset)) {
-                    pages.set(
-                        offset,
-                        []
-                    );
-                }
-
-                pages
-                    .get(offset)
-                    .push(position);
-            }
-
-
-            // ---------------------------------------------
-            // OBTENER PÁGINAS
-            // ---------------------------------------------
-
-            const selectedTracks =
-                [];
+            const tracks = [];
 
             for (
-                const [offset]
-                of pages
+                const offset
+                of offsets
             ) {
-
-                const response =
-                    await fetch(
-                        `https://api.spotify.com/v1/playlists/${encodeURIComponent(
-                            playlistId
-                        )}/items?limit=50&offset=${offset}`,
-                        {
-                            headers: {
-                                Authorization:
-                                    `Bearer ${accessToken}`
-                            }
-                        }
-                    );
 
                 const data =
-                    await response.json();
-
-                if (!response.ok) {
-
-                    console.error(
-                        "Error obteniendo página:",
-                        data
+                    await getPlaylistPage(
+                        playlistId,
+                        offset,
+                        50
                     );
-
-                    return res
-                        .status(
-                            response.status
-                        )
-                        .json(data);
-                }
 
                 for (
                     const item
@@ -419,99 +536,29 @@ app.get(
                     const track =
                         item.item;
 
-                    if (
-                        !track ||
-                        track.type !== "track" ||
-                        !track.uri
-                    ) {
-                        continue;
+                    if (validTrack(track)) {
+                        tracks.push(
+                            formatTrack(track)
+                        );
                     }
-
-                    selectedTracks.push({
-                        id:
-                            track.id,
-
-                        uri:
-                            track.uri,
-
-                        name:
-                            track.name,
-
-                        artist:
-                            (track.artists || [])
-                                .map(
-                                    artist =>
-                                        artist.name
-                                )
-                                .join(", "),
-
-                        album:
-                            track.album?.name ||
-                            "",
-
-                        year:
-                            parseInt(
-                                track.album
-                                    ?.release_date
-                                    ?.slice(0, 4),
-                                10
-                            ),
-
-                        cover:
-                            track.album
-                                ?.images?.[0]?.url ||
-                            track.album
-                                ?.images?.[1]?.url ||
-                            track.album
-                                ?.images?.[2]?.url ||
-                            null
-                    });
                 }
             }
 
-
-            // ---------------------------------------------
-            // MEZCLAR + ELIMINAR DUPLICADOS
-            // ---------------------------------------------
-
-            shuffleArray(
-                selectedTracks
-            );
-
-            const tracks = [];
-            const usedIds =
-                new Set();
-
-            for (
-                const track
-                of selectedTracks
-            ) {
-
-                if (
-                    usedIds.has(
-                        track.id
+            const result =
+                shuffle(
+                    uniqueTracks(
+                        tracks
                     )
-                ) {
-                    continue;
-                }
-
-                usedIds.add(
-                    track.id
+                ).slice(
+                    0,
+                    50
                 );
-
-                tracks.push(
-                    track
-                );
-            }
-
 
             console.log(
-                `🎲 Enviando ${tracks.length} canciones aleatorias`
+                `Playlist ${name}: ${result.length} canciones`
             );
 
-            res.json(
-                tracks.slice(0, 50)
-            );
+            res.json(result);
 
         } catch (error) {
 
@@ -530,157 +577,29 @@ app.get(
 
 
 // =====================================================
-// CATÁLOGO COMPLETO
-// =====================================================
-//
-// Lo utiliza Bingo.
-// Recorre toda la playlist.
-// Incluye year.
+// CATÁLOGO COMPLETO — BINGO
 // =====================================================
 
 app.get(
     "/api/playlists/:playlistId/catalog",
     async (req, res) => {
 
-        if (!accessToken) {
-
-            return res.status(401).json({
-                error:
-                    "No hay usuario autenticado"
-            });
+        if (!requireAuth(req, res)) {
+            return;
         }
-
-        const {
-            playlistId
-        } = req.params;
 
         try {
 
-            const allTracks = [];
-
-            let offset = 0;
-
-            const limit = 50;
-
-
-            while (true) {
-
-                const response =
-                    await fetch(
-                        `https://api.spotify.com/v1/playlists/${encodeURIComponent(
-                            playlistId
-                        )}/items?limit=${limit}&offset=${offset}`,
-                        {
-                            headers: {
-                                Authorization:
-                                    `Bearer ${accessToken}`
-                            }
-                        }
-                    );
-
-                const data =
-                    await response.json();
-
-                if (!response.ok) {
-
-                    console.error(
-                        "Error obteniendo catálogo:",
-                        data
-                    );
-
-                    return res
-                        .status(
-                            response.status
+            const tracks =
+                shuffle(
+                    uniqueTracks(
+                        await getAllPlaylistTracks(
+                            req.params.playlistId
                         )
-                        .json(data);
-                }
+                    )
+                );
 
-                const items =
-                    data.items || [];
-
-
-                for (
-                    const item
-                    of items
-                ) {
-
-                    const track =
-                        item.item;
-
-                    if (
-                        !track ||
-                        track.type !== "track" ||
-                        !track.uri
-                    ) {
-                        continue;
-                    }
-
-                    allTracks.push({
-
-                        id:
-                            track.id,
-
-                        uri:
-                            track.uri,
-
-                        name:
-                            track.name,
-
-                        artist:
-                            (track.artists || [])
-                                .map(
-                                    artist =>
-                                        artist.name
-                                )
-                                .join(", "),
-
-                        album:
-                            track.album?.name ||
-                            "",
-
-                        year:
-                            parseInt(
-                                track.album
-                                    ?.release_date
-                                    ?.slice(0, 4),
-                                10
-                            ),
-
-                        cover:
-                            track.album
-                                ?.images?.[0]?.url ||
-                            track.album
-                                ?.images?.[1]?.url ||
-                            track.album
-                                ?.images?.[2]?.url ||
-                            null
-                    });
-                }
-
-
-                if (
-                    items.length < limit
-                ) {
-                    break;
-                }
-
-                offset += limit;
-            }
-
-
-            shuffleArray(
-                allTracks
-            );
-
-
-            console.log(
-                `🎵 Catálogo Bingo: ${allTracks.length} canciones`
-            );
-
-
-            res.json(
-                allTracks
-            );
+            res.json(tracks);
 
         } catch (error) {
 
@@ -701,201 +620,38 @@ app.get(
 // =====================================================
 // HIPSTER PERSONAL
 // =====================================================
-//
-// NO HAY LÍMITE ARTIFICIAL.
-// Devuelve todas las canciones con año válido.
-// =====================================================
 
 app.get(
     "/api/playlists/:playlistId/hipster",
     async (req, res) => {
 
-        if (!accessToken) {
-
-            return res.status(401).json({
-                error:
-                    "No hay usuario autenticado"
-            });
+        if (!requireAuth(req, res)) {
+            return;
         }
-
-        const {
-            playlistId
-        } = req.params;
 
         try {
 
-            const allTracks = [];
-
-            let offset = 0;
-
-            const limit = 50;
-
-
-            while (true) {
-
-                const response =
-                    await fetch(
-                        `https://api.spotify.com/v1/playlists/${encodeURIComponent(
-                            playlistId
-                        )}/items?limit=${limit}&offset=${offset}`,
-                        {
-                            headers: {
-                                Authorization:
-                                    `Bearer ${accessToken}`
-                            }
-                        }
-                    );
-
-                const data =
-                    await response.json();
-
-                if (!response.ok) {
-
-                    console.error(
-                        "Error obteniendo Hipster personal:",
-                        data
-                    );
-
-                    return res
-                        .status(
-                            response.status
-                        )
-                        .json(data);
-                }
-
-                const items =
-                    data.items || [];
-
-
-                for (
-                    const item
-                    of items
-                ) {
-
-                    const track =
-                        item.item;
-
-                    if (
-                        !track ||
-                        track.type !== "track" ||
-                        !track.uri
-                    ) {
-                        continue;
-                    }
-
-
-                    const year =
-                        parseInt(
-                            track.album
-                                ?.release_date
-                                ?.slice(0, 4),
-                            10
-                        );
-
-
-                    /*
-                     * Hipster necesita año.
-                     */
-                    if (
-                        !Number.isInteger(year) ||
-                        year <= 0
-                    ) {
-                        continue;
-                    }
-
-
-                    allTracks.push({
-
-                        id:
-                            track.id,
-
-                        uri:
-                            track.uri,
-
-                        name:
-                            track.name,
-
-                        artist:
-                            (track.artists || [])
-                                .map(
-                                    artist =>
-                                        artist.name
-                                )
-                                .join(", "),
-
-                        album:
-                            track.album?.name ||
-                            "",
-
-                        year,
-
-                        cover:
-                            track.album
-                                ?.images?.[0]?.url ||
-                            track.album
-                                ?.images?.[1]?.url ||
-                            track.album
-                                ?.images?.[2]?.url ||
-                            null
-                    });
-                }
-
-
-                if (
-                    items.length < limit
-                ) {
-                    break;
-                }
-
-                offset += limit;
-            }
-
-
-            // ---------------------------------------------
-            // ELIMINAR DUPLICADOS
-            // ---------------------------------------------
-
-            const tracks = [];
-
-            const usedIds =
-                new Set();
-
-            for (
-                const track
-                of allTracks
-            ) {
-
-                if (
-                    usedIds.has(
-                        track.id
+            const tracks =
+                uniqueTracks(
+                    await getAllPlaylistTracks(
+                        req.params.playlistId
                     )
-                ) {
-                    continue;
-                }
-
-                usedIds.add(
-                    track.id
+                )
+                .filter(
+                    track =>
+                        Number.isInteger(
+                            track.year
+                        ) &&
+                        track.year > 0
                 );
 
-                tracks.push(
-                    track
-                );
-            }
-
-
-            shuffleArray(
-                tracks
-            );
-
+            shuffle(tracks);
 
             console.log(
-                `🎵 Hipster personal: ${tracks.length} canciones con año`
+                `Hipster personal: ${tracks.length} canciones`
             );
 
-
-            res.json(
-                tracks
-            );
+            res.json(tracks);
 
         } catch (error) {
 
@@ -921,149 +677,33 @@ app.get(
     "/api/hipster/tracks",
     async (req, res) => {
 
-        if (!accessToken) {
-
-            return res.status(401).json({
-                error:
-                    "No hay usuario autenticado"
-            });
+        if (!requireAuth(req, res)) {
+            return;
         }
-
 
         try {
 
-            const tracks = [];
+            const tracks =
+                uniqueTracks(
+                    await getAllPlaylistTracks(
+                        HIPSTER_PLAYLIST_ID
+                    )
+                )
+                .filter(
+                    track =>
+                        Number.isInteger(
+                            track.year
+                        ) &&
+                        track.year > 0
+                );
 
-            let offset = 0;
-
-            const limit = 50;
-
-
-            while (true) {
-
-                const response =
-                    await fetch(
-                        `https://api.spotify.com/v1/playlists/${HIPSTER_PLAYLIST_ID}/items?limit=${limit}&offset=${offset}`,
-                        {
-                            headers: {
-                                Authorization:
-                                    `Bearer ${accessToken}`
-                            }
-                        }
-                    );
-
-
-                const data =
-                    await response.json();
-
-
-                if (!response.ok) {
-
-                    console.error(
-                        "Error Hipster Global:",
-                        data
-                    );
-
-                    return res
-                        .status(
-                            response.status
-                        )
-                        .json(data);
-                }
-
-
-                const items =
-                    data.items || [];
-
-
-                for (
-                    const item
-                    of items
-                ) {
-
-                    const track =
-                        item.item;
-
-
-                    if (
-                        !track ||
-                        track.type !== "track" ||
-                        !track.uri
-                    ) {
-                        continue;
-                    }
-
-
-                    const year =
-                        parseInt(
-                            track.album
-                                ?.release_date
-                                ?.slice(0, 4),
-                            10
-                        );
-
-
-                    if (
-                        !Number.isInteger(year) ||
-                        year <= 0
-                    ) {
-                        continue;
-                    }
-
-
-                    tracks.push({
-
-                        id:
-                            track.id,
-
-                        uri:
-                            track.uri,
-
-                        name:
-                            track.name,
-
-                        artist:
-                            (track.artists || [])
-                                .map(
-                                    artist =>
-                                        artist.name
-                                )
-                                .join(", "),
-
-                        year,
-
-                        cover:
-                            track.album
-                                ?.images?.[0]?.url ||
-                            null
-                    });
-                }
-
-
-                if (
-                    items.length < limit
-                ) {
-                    break;
-                }
-
-
-                offset += limit;
-            }
-
-
-            shuffleArray(
-                tracks
-            );
-
+            shuffle(tracks);
 
             console.log(
-                `🎵 Hipster Global: ${tracks.length} canciones`
+                `Hipster Global: ${tracks.length} canciones`
             );
 
-
-            res.json(
-                tracks
-            );
+            res.json(tracks);
 
         } catch (error) {
 
@@ -1082,77 +722,36 @@ app.get(
 
 
 // =====================================================
-// SHUFFLE
-// =====================================================
-
-function shuffleArray(array) {
-
-    for (
-        let i = array.length - 1;
-        i > 0;
-        i--
-    ) {
-
-        const j =
-            Math.floor(
-                Math.random() * (i + 1)
-            );
-
-        [
-            array[i],
-            array[j]
-        ] = [
-            array[j],
-            array[i]
-        ];
-    }
-
-    return array;
-}
-
-
-// =====================================================
-// TRANSFERIR REPRODUCCIÓN
+// REPRODUCCIÓN
 // =====================================================
 
 app.put(
     "/api/transfer",
     async (req, res) => {
 
+        if (!requireAuth(req, res)) {
+            return;
+        }
+
         const {
             deviceId
         } = req.body;
 
-        if (!accessToken) {
-
-            return res
-                .status(401)
-                .send(
-                    "No hay Access Token."
-                );
-        }
-
         if (!deviceId) {
-
             return res
                 .status(400)
-                .send(
-                    "Falta deviceId."
-                );
+                .send("Falta deviceId.");
         }
 
         try {
 
             const response =
-                await fetch(
-                    "https://api.spotify.com/v1/me/player",
+                await spotifyFetch(
+                    "/me/player",
                     {
                         method: "PUT",
 
                         headers: {
-                            Authorization:
-                                `Bearer ${accessToken}`,
-
                             "Content-Type":
                                 "application/json"
                         },
@@ -1162,7 +761,6 @@ app.put(
                                 device_ids: [
                                     deviceId
                                 ],
-
                                 play: false
                             })
                     }
@@ -1170,31 +768,21 @@ app.put(
 
             if (!response.ok) {
 
-                const error =
-                    await response.text();
-
-                console.error(
-                    "Error transfer:",
-                    error
-                );
-
                 return res
                     .status(
                         response.status
                     )
-                    .send(error);
+                    .send(
+                        await response.text()
+                    );
             }
-
-            console.log(
-                "✅ Spotify Games es el dispositivo activo"
-            );
 
             res.sendStatus(204);
 
         } catch (error) {
 
             console.error(
-                "Error transfer:",
+                "Error transfiriendo:",
                 error
             );
 
@@ -1206,90 +794,63 @@ app.put(
 );
 
 
-// =====================================================
-// REPRODUCIR CANCIÓN
-// =====================================================
-
 app.put(
     "/api/play",
     async (req, res) => {
+
+        if (!requireAuth(req, res)) {
+            return;
+        }
 
         const {
             deviceId,
             trackUri
         } = req.body;
 
-        if (!accessToken) {
-
-            return res
-                .status(401)
-                .send(
-                    "No hay Access Token."
-                );
-        }
-
         if (!deviceId) {
-
             return res
                 .status(400)
-                .send(
-                    "Falta deviceId."
-                );
+                .send("Falta deviceId.");
         }
 
         try {
 
-            const body =
-                trackUri
-                    ? {
-                        uris: [
-                            trackUri
-                        ]
-                    }
-                    : {};
-
-
             const response =
-                await fetch(
-                    `https://api.spotify.com/v1/me/player/play?device_id=${encodeURIComponent(
+                await spotifyFetch(
+                    `/me/player/play?device_id=${encodeURIComponent(
                         deviceId
                     )}`,
                     {
                         method: "PUT",
 
                         headers: {
-                            Authorization:
-                                `Bearer ${accessToken}`,
-
                             "Content-Type":
                                 "application/json"
                         },
 
                         body:
                             JSON.stringify(
-                                body
+                                trackUri
+                                    ? {
+                                        uris: [
+                                            trackUri
+                                        ]
+                                    }
+                                    : {}
                             )
                     }
                 );
 
-
             if (!response.ok) {
-
-                const error =
-                    await response.text();
-
-                console.error(
-                    "Spotify play error:",
-                    error
-                );
 
                 return res
                     .status(
                         response.status
                     )
-                    .send(error);
+                    .send(
+                        await response.text()
+                    );
             }
-
 
             res.sendStatus(204);
 
@@ -1308,51 +869,34 @@ app.put(
 );
 
 
-// =====================================================
-// PAUSAR
-// =====================================================
-
 app.put(
     "/api/pause",
     async (req, res) => {
 
-        if (!accessToken) {
-
-            return res
-                .status(401)
-                .send(
-                    "No hay Access Token."
-                );
+        if (!requireAuth(req, res)) {
+            return;
         }
 
         try {
 
             const response =
-                await fetch(
-                    "https://api.spotify.com/v1/me/player/pause",
+                await spotifyFetch(
+                    "/me/player/pause",
                     {
-                        method: "PUT",
-
-                        headers: {
-                            Authorization:
-                                `Bearer ${accessToken}`
-                        }
+                        method: "PUT"
                     }
                 );
 
-
             if (!response.ok) {
-
-                const error =
-                    await response.text();
 
                 return res
                     .status(
                         response.status
                     )
-                    .send(error);
+                    .send(
+                        await response.text()
+                    );
             }
-
 
             res.sendStatus(204);
 
@@ -1372,7 +916,7 @@ app.put(
 
 
 // =====================================================
-// START
+// SERVIDOR
 // =====================================================
 
 app.listen(
@@ -1380,7 +924,7 @@ app.listen(
     () => {
 
         console.log(
-            `🚀 Spotify Games: http://127.0.0.1:${PORT}`
+            `Spotify Games: http://127.0.0.1:${PORT}`
         );
     }
 );
