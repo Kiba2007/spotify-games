@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Spotify Games</title>
+
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/snake/snake.css">
+    <link rel="stylesheet" href="/bingo/bingo.css">
+    <link rel="stylesheet" href="/hipster/hipster.css">
+</head>
+
+<body>
+
+    <!-- LOGIN -->
+    <section id="loginScreen" class="screen hidden">
+        <div class="loginBox">
+            <span class="eyebrow">SPOTIFY GAMES</span>
+            <h1>Spotify Games</h1>
+            <p>Inicia sesión con Spotify para empezar.</p>
+
+            <a href="/login" class="primaryButton">
+                Iniciar sesión con Spotify
+            </a>
+        </div>
+    </section>
+
+
+    <!-- MENÚ -->
+    <section id="menuScreen" class="screen hidden">
+
+        <header class="menuHeader">
+            <span class="eyebrow">SPOTIFY GAMES</span>
+            <h1>Elige un juego</h1>
+            <p>Selecciona un juego y una playlist para empezar.</p>
+        </header>
+
+
+        <!-- JUEGOS -->
+        <div class="gameSelector">
+
+            <button
+                class="gameCard selected"
+                data-game="snake"
+                type="button"
+            >
+                <span class="gameIcon">🐍</span>
+                <strong>Snake</strong>
+                <small>Come para cambiar de canción</small>
+            </button>
+
+
+            <button
+                class="gameCard"
+                data-game="bingo"
+                type="button"
+            >
+                <span class="gameIcon">🎱</span>
+                <strong>Bingo Musical</strong>
+                <small>Genera tarjetas con tu música</small>
+            </button>
+
+
+            <button
+                class="gameCard"
+                data-game="hipster-user"
+                type="button"
+            >
+                <span class="gameIcon">🎵</span>
+                <strong>Hipster</strong>
+                <small>Juega con tu playlist</small>
+            </button>
+
+
+            <button
+                class="gameCard"
+                data-game="hipster-global"
+                type="button"
+            >
+                <span class="gameIcon">🌍</span>
+                <strong>Hipster Global</strong>
+                <small>Juega con la playlist oficial</small>
+            </button>
+
+        </div>
+
+
+        <!-- PLAYLISTS -->
+        <div class="playlistHeader">
+            <div>
+                <span class="eyebrow">TU MÚSICA</span>
+                <h2>Elige una playlist</h2>
+            </div>
+
+            <span id="playlistStatus">
+                Cargando...
+            </span>
+        </div>
+
+        <div id="playlistList" class="playlistGrid"></div>
+
+
+        <!-- START -->
+        <div class="menuFooter">
+            <span id="selectedText">
+                Selecciona una playlist
+            </span>
+
+            <button
+                id="startButton"
+                class="primaryButton"
+                type="button"
+                disabled
+            >
+                Empezar Snake
+            </button>
+        </div>
+
+    </section>
+
+
+    <!-- SNAKE -->
+    <section id="gameScreen" class="screen hidden">
+        <div id="snakeContainer"></div>
+    </section>
+
+
+    <!-- BINGO -->
+    <section id="bingoScreen" class="screen hidden">
+        <div id="bingoContainer"></div>
+    </section>
+
+
+    <!-- HIPSTER -->
+    <section id="hipsterScreen" class="screen hidden">
+        <div id="hipsterContainer"></div>
+    </section>
+
+
+    <!-- SPOTIFY -->
+    <script src="https://sdk.scdn.co/spotify-player.js"></script>
+
+    <script src="/spotify/auth.js"></script>
+    <script src="/spotify/playlists.js"></script>
+    <script src="/spotify/spotify.js"></script>
+
+    <!-- JUEGOS -->
+    <script src="/snake/snake.js"></script>
+    <script src="/bingo/bingo.js"></script>
+    <script src="/hipster/hipster.js"></script>
+
+    <!-- APP -->
+    <script src="/script.js"></script>
+
+</body>
+</html>

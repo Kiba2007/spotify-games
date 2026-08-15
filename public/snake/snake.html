@@ -1,0 +1,116 @@
+<div class="snakeLayout">
+
+    <header class="gameHeader">
+
+        <div class="gameTitle">
+            <span class="eyebrow">SNAKE</span>
+
+            <strong id="gamePlaylistName">—</strong>
+        </div>
+
+        <div class="scoreBox">
+            <span>PUNTOS</span>
+            <strong id="score">0</strong>
+        </div>
+
+        <div class="gameTrack">
+
+            <img
+                id="gameAlbumImage"
+                src=""
+                alt=""
+            >
+
+            <div>
+                <strong id="gameTrackName">—</strong>
+                <span id="gameArtistName">—</span>
+            </div>
+
+        </div>
+
+    </header>
+
+
+    <main class="snakeGame">
+
+        <div class="canvasWrapper">
+
+            <canvas
+                id="gameCanvas"
+                width="800"
+                height="600"
+            ></canvas>
+
+
+            <!-- READY -->
+
+            <div
+                id="snakeReady"
+                class="snakeOverlay"
+            >
+                <div class="snakeOverlayIcon">🐍</div>
+
+                <span class="eyebrow">SNAKE</span>
+
+                <h2>¿Listo?</h2>
+
+                <p>
+                    Come las portadas para cambiar de canción.
+                </p>
+
+                <button
+                    id="startSnakeButton"
+                    class="snakePrimary"
+                    type="button"
+                >
+                    Empezar
+                </button>
+            </div>
+
+
+            <!-- GAME OVER -->
+
+            <div
+                id="snakeGameOver"
+                class="snakeOverlay hidden"
+            >
+                <div class="snakeOverlayIcon">💥</div>
+
+                <span class="eyebrow">GAME OVER</span>
+
+                <h2>Fin de la partida</h2>
+
+                <p id="snakeFinalScore">
+                    Puntuación: 0
+                </p>
+
+                <button
+                    id="restartSnakeButton"
+                    class="snakePrimary"
+                    type="button"
+                >
+                    Reiniciar
+                </button>
+            </div>
+
+        </div>
+
+
+        <footer class="gameFooter">
+
+            <span>
+                🐍 COME PARA CAMBIAR DE CANCIÓN
+            </span>
+
+            <button
+                id="exitGameButton"
+                type="button"
+            >
+                ← Volver
+            </button>
+
+        </footer>
+
+    </main>
+
+</div>

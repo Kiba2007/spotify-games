@@ -1,0 +1,153 @@
+<div class="hipsterLayout">
+
+    <header class="hipsterHeader">
+        <div>
+            <span class="eyebrow">SPOTIFY GAMES</span>
+            <h1>HIPSTER</h1>
+            <p>Escucha la canción y colócala en el momento correcto.</p>
+        </div>
+
+        <div class="hipsterStats">
+            <div class="hipsterStat">
+                <span>RACHA</span>
+                <strong id="hipsterScore">0</strong>
+            </div>
+
+            <div class="hipsterStat">
+                <span>RÉCORD</span>
+                <strong id="hipsterBest">0</strong>
+            </div>
+        </div>
+    </header>
+
+    <main class="hipsterGame">
+
+        <section id="hipsterIntro" class="hipsterIntro">
+            <div class="hipsterIntroIcon">🎵</div>
+
+            <h2>¿Dónde va la canción?</h2>
+
+            <p>
+                Escucha la canción y colócala antes,
+                después o entre las cartas.
+            </p>
+
+            <button
+                id="hipsterStartButton"
+                class="hipsterPrimary"
+                type="button"
+            >
+                Empezar
+            </button>
+        </section>
+
+
+        <section id="hipsterBoard" class="hidden">
+
+            <!-- REPRODUCTOR -->
+
+            <div class="hipsterPlayer">
+
+                <button
+                    id="hipsterPlayPause"
+                    class="hipsterPlayButton"
+                    type="button"
+                    aria-label="Reproducir o pausar"
+                >
+                    ▶
+                </button>
+
+                <div class="hipsterPlayerMain">
+
+                    <div class="hipsterPlayerMeta">
+                        <span>HIPSTER</span>
+                        <span id="hipsterPlayerStatus">LISTO</span>
+                    </div>
+
+                    <input
+                        id="hipsterProgress"
+                        type="range"
+                        min="0"
+                        max="1000"
+                        value="0"
+                    >
+
+                    <div class="hipsterPlayerTimes">
+                        <span id="hipsterCurrentTime">0:00</span>
+                        <span id="hipsterDuration">0:00</span>
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- TIMELINE -->
+
+            <header class="hipsterTop">
+                <span class="eyebrow">LÍNEA TEMPORAL</span>
+                <h2>¿Dónde la colocarías?</h2>
+            </header>
+
+            <div
+                id="hipsterTimeline"
+                class="hipsterTimeline"
+            ></div>
+
+
+            <!-- RESULTADO -->
+
+            <div
+                id="hipsterResult"
+                class="hipsterResult hidden"
+            ></div>
+
+        </section>
+
+
+        <!-- GAME OVER -->
+
+        <section
+            id="hipsterGameOver"
+            class="hipsterGameOver hidden"
+        >
+
+            <div class="hipsterGameOverIcon">💥</div>
+
+            <span class="eyebrow">GAME OVER</span>
+
+            <h2 id="hipsterFinalTitle">
+                Te has equivocado
+            </h2>
+
+            <div class="hipsterFinalScore">
+                <span>RACHA CONSEGUIDA</span>
+                <strong id="hipsterFinalScore">0</strong>
+            </div>
+
+            <div
+                id="hipsterFinalRecord"
+                class="hipsterFinalRecord"
+            ></div>
+
+            <button
+                id="hipsterRestartButton"
+                class="hipsterPrimary"
+                type="button"
+            >
+                Jugar otra vez
+            </button>
+
+            <button
+                id="hipsterExitButton"
+                class="hipsterBack"
+                type="button"
+            >
+                ← Volver
+            </button>
+
+        </section>
+
+    </main>
+
+</div>

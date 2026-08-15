@@ -1,0 +1,364 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html,
+body {
+    width: 100%;
+    min-height: 100%;
+}
+
+body {
+    min-height: 100vh;
+    background: #080808;
+    color: #fff;
+    font-family: Arial, sans-serif;
+}
+
+button,
+input,
+select {
+    font: inherit;
+}
+
+button {
+    cursor: pointer;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.screen {
+    width: 100%;
+    min-height: 100vh;
+}
+
+
+/* =====================================================
+   TEXTO
+===================================================== */
+
+.eyebrow {
+    display: block;
+    color: #1db954;
+    font-size: 11px;
+    font-weight: bold;
+    letter-spacing: 3px;
+}
+
+
+/* =====================================================
+   BOTONES
+===================================================== */
+
+.primaryButton,
+.secondaryButton {
+    height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 18px;
+    border: 0;
+    border-radius: 8px;
+    font-weight: bold;
+    text-decoration: none;
+    transition:
+        background .15s ease,
+        transform .15s ease;
+}
+
+.primaryButton {
+    background: #1db954;
+    color: #fff;
+}
+
+.primaryButton:hover {
+    background: #1ed760;
+}
+
+.primaryButton:active {
+    transform: scale(.98);
+}
+
+.secondaryButton {
+    background: #292929;
+    color: #fff;
+}
+
+.secondaryButton:hover {
+    background: #353535;
+}
+
+button:disabled {
+    opacity: .35;
+    cursor: not-allowed;
+}
+
+
+/* =====================================================
+   LOGIN
+===================================================== */
+
+#loginScreen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 30px;
+}
+
+.loginBox {
+    width: min(430px, 100%);
+    padding: 45px;
+    background: #121212;
+    border: 1px solid #242424;
+    border-radius: 18px;
+    text-align: center;
+    box-shadow: 0 25px 80px rgba(0, 0, 0, .45);
+}
+
+.loginBox h1 {
+    margin: 12px 0;
+    font-size: 42px;
+}
+
+.loginBox p {
+    margin-bottom: 30px;
+    color: #777;
+}
+
+
+/* =====================================================
+   MENÚ
+===================================================== */
+
+#menuScreen {
+    padding: 40px;
+}
+
+.menuHeader {
+    max-width: 1200px;
+    margin: 0 auto 30px;
+}
+
+.menuHeader h1 {
+    margin: 8px 0;
+    font-size: 42px;
+}
+
+.menuHeader p {
+    color: #777;
+}
+
+
+/* =====================================================
+   JUEGOS
+===================================================== */
+
+.gameSelector {
+    max-width: 1200px;
+    margin: 0 auto 40px;
+
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+}
+
+.gameCard {
+    min-height: 150px;
+    padding: 25px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 8px;
+
+    background: #121212;
+    color: #fff;
+
+    border: 1px solid #242424;
+    border-radius: 14px;
+
+    text-align: left;
+
+    transition:
+        border-color .15s ease,
+        background .15s ease,
+        transform .15s ease;
+}
+
+.gameCard:hover {
+    background: #171717;
+    transform: translateY(-2px);
+}
+
+.gameCard.selected {
+    border-color: #1db954;
+    background: #151a16;
+}
+
+.gameIcon {
+    font-size: 35px;
+}
+
+.gameCard strong {
+    font-size: 19px;
+}
+
+.gameCard small {
+    color: #777;
+}
+
+
+/* =====================================================
+   PLAYLISTS
+===================================================== */
+
+.playlistHeader {
+    max-width: 1200px;
+    margin: 0 auto 15px;
+
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+}
+
+.playlistHeader h2 {
+    margin-top: 6px;
+    font-size: 25px;
+}
+
+#playlistStatus {
+    color: #777;
+    font-size: 13px;
+}
+
+.playlistGrid {
+    max-width: 1200px;
+    margin: 0 auto 25px;
+
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+}
+
+.playlist {
+    padding: 12px;
+
+    background: #121212;
+    border: 1px solid #242424;
+    border-radius: 12px;
+
+    color: #fff;
+    text-align: left;
+    overflow: hidden;
+
+    transition:
+        border-color .15s ease,
+        background .15s ease;
+}
+
+.playlist:hover {
+    background: #171717;
+}
+
+.playlist.selected {
+    border-color: #1db954;
+}
+
+.playlist img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 1;
+    margin-bottom: 10px;
+
+    border-radius: 8px;
+    object-fit: cover;
+    background: #1c1c1c;
+}
+
+.playlistName {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-weight: bold;
+}
+
+.playlistTracks {
+    display: block;
+    margin-top: 4px;
+    color: #777;
+    font-size: 12px;
+}
+
+
+/* =====================================================
+   FOOTER
+===================================================== */
+
+.menuFooter {
+    position: sticky;
+    bottom: 0;
+
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 15px 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    background: #080808;
+}
+
+#selectedText {
+    color: #777;
+    font-size: 13px;
+}
+
+
+/* =====================================================
+   RESPONSIVE
+===================================================== */
+
+@media (max-width: 1000px) {
+
+    .gameSelector {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .playlistGrid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 650px) {
+
+    #menuScreen {
+        padding: 20px;
+    }
+
+    .menuHeader h1 {
+        font-size: 32px;
+    }
+
+    .gameSelector,
+    .playlistGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .playlistHeader {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .menuFooter {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 15px;
+    }
+}
